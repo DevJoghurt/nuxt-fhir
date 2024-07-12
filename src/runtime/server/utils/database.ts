@@ -1,7 +1,7 @@
 import { Pool, PoolClient } from 'pg';
-import { MedplumDatabaseConfig, MedplumServerConfig } from './config';
-import { globalLogger } from './logger';
-import * as migrations from '../../migrations/schema';
+import { globalLogger } from '#imports';
+import * as migrations from '../migrations/schema';
+import { PostgresDatabase, PostgresServerConfig } from '../../../types';
 
 export enum DatabaseMode {
   READER = 'reader',
@@ -27,7 +27,8 @@ export const locks = {
   migration: 1,
 };
 
-export async function initDatabase(serverConfig: MedplumServerConfig): Promise<void> {
+
+export async function initDatabase(serverConfig: PostgresServerConfig): Promise<void> {
   pool = await initPool(serverConfig.database, serverConfig.databaseProxyEndpoint);
 
   if (serverConfig.database.runMigrations !== false) {
@@ -39,7 +40,8 @@ export async function initDatabase(serverConfig: MedplumServerConfig): Promise<v
   }
 }
 
-async function initPool(config: MedplumDatabaseConfig, proxyEndpoint: string | undefined): Promise<Pool> {
+async function initPool(config: PostgresDatabase, proxyEndpoint: string | undefined): Promise<Pool> {
+
   const poolConfig = {
     host: config.host,
     port: config.port,
@@ -47,7 +49,7 @@ async function initPool(config: MedplumDatabaseConfig, proxyEndpoint: string | u
     user: config.username,
     password: config.password,
     ssl: config.ssl,
-    max: 100,
+    max: config.max,
   };
 
   if (proxyEndpoint) {
@@ -101,6 +103,7 @@ async function runMigrations(pool: Pool): Promise<void> {
 }
 
 async function migrate(client: PoolClient): Promise<void> {
+
   await client.query(`CREATE TABLE IF NOT EXISTS "DatabaseMigration" (
     "id" INTEGER NOT NULL PRIMARY KEY,
     "version" INTEGER NOT NULL,

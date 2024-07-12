@@ -4,7 +4,7 @@
  */
 
 import { PoolClient } from 'pg';
-import { globalLogger } from '../../logger';
+import { globalLogger } from '#imports';
 
 const resourceTypes = [
   'AccessPolicy',
