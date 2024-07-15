@@ -27,9 +27,16 @@ export default defineNuxtModule<ModuleOptions>({
         ssl: {
           required: true
         }
-      }
+      },
     },
-    logLevel: 'INFO'
+    redis: {
+      host: '127.0.0.1',
+      port: 6379
+    },
+    cookiePrefix: 'fhir',
+    saveAuditEvents: false,
+    logLevel: 'INFO',
+    vmContextBotsEnabled: true
   },
   setup(_options, _nuxt) {
     const { resolve } = createResolver(import.meta.url)
@@ -47,16 +54,28 @@ export default defineNuxtModule<ModuleOptions>({
     if (!appBaseUrl.endsWith('/')) {
       appBaseUrl = appBaseUrl + '/'
     }
+    let storageDomainName = _options.storageDomainName ? _options.storageDomainName : _nuxt.options.devServer.host
+    let storageBaseUrl = _options.storageBaseUrl ? _options.storageBaseUrl : _nuxt.options.devServer.url + '/binary/'
 
     _nuxt.options.runtimeConfig.fhir = defu(_nuxt.options.runtimeConfig.fhir || {}, {
       baseUrl,
       appBaseUrl,
       postgres: _options.postgres,
+      redis: _options.redis,
       logLevel: _options.logLevel,
       issuer: _options.issuer || baseUrl,
       jwksUrl: _options.jwksUrl || `${baseUrl}/.well-known/jwks.json`,
       authorizeUrl: _options.authorizeUrl || `${baseUrl}/oauth2/authorize`,
-      tokenUrl: _options.authorizeUrl || `${baseUrl}/oauth2/token`
+      tokenUrl: _options.authorizeUrl || `${baseUrl}/oauth2/token`,
+      cookiePrefix: _options.cookiePrefix,
+      recaptchaSiteKey: _options.recaptchaSiteKey || undefined,
+      recaptchaSecretKey: _options.recaptchaSecretKey || undefined,
+      storageDomainName,
+      storageBaseUrl,
+      saveAuditEvents: _options.saveAuditEvents,
+      vmContextBotsEnabled: _options.vmContextBotsEnabled,
+      maxBotLogLengthForLogs: _options.maxBotLogLengthForLogs,
+      maxBotLogLengthForResource: _options.maxBotLogLengthForResource
     })
 
   },

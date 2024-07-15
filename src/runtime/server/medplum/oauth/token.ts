@@ -15,12 +15,11 @@ import {
 } from '@medplum/core';
 import { ClientApplication, Login, Project, ProjectMembership, Reference } from '@medplum/fhirtypes';
 import { createHash, randomUUID } from 'crypto';
-import { Request, RequestHandler, Response } from 'express';
 import type { H3Event, EventHandlerRequest } from 'h3'
-import  { sendRedirect, readBody, getQuery, createError, getCookie, getHeader, getRequestIP } from '#imports'
+import { setResponseHeader, setResponseStatus, send } from "h3";
+import  { readBody, createError, getHeader, getRequestIP, useRuntimeConfig } from '#imports'
 import { JWTVerifyOptions, createRemoteJWKSet, jwtVerify } from 'jose';
 import { getProjectIdByClientId } from '../auth/utils';
-import { getConfig } from '../config';
 import { getAccessPolicyForLogin } from '../fhir/accesspolicy';
 import { getSystemRepo } from '../fhir/repo';
 import { getTopicForUser } from '../fhircast/utils';
@@ -50,7 +49,7 @@ type FhircastProps = { 'hub.topic': string; 'hub.url': string };
  *
  * See: https://openid.net/specs/openid-connect-core-1_0.html#TokenEndpoint
  */
-export const tokenHandler: RequestHandler = async (event: H3Event<EventHandlerRequest>) => {
+export const tokenHandler = async (event: H3Event<EventHandlerRequest>) => {
 
   if (getHeader(event,"Content-Type") !== ContentType.FORM_URL_ENCODED) {
     throw createError({
@@ -82,10 +81,9 @@ export const tokenHandler: RequestHandler = async (event: H3Event<EventHandlerRe
 /**
  * Handles the "Client Credentials" OAuth flow.
  * See: https://datatracker.ietf.org/doc/html/rfc6749#section-4.4
- * @param req - The HTTP request.
- * @param res - The HTTP response.
+ * @param event - The H3 event.
  */
-async function handleClientCredentials(event: H3Event<EventHandlerRequest>): Promise<void> {
+async function handleClientCredentials(event: H3Event<EventHandlerRequest>) {
   const { clientId, clientSecret, error } = await getClientIdAndSecret(event);
   const body = await readBody(event);
   if (error) {
@@ -156,7 +154,7 @@ async function handleClientCredentials(event: H3Event<EventHandlerRequest>): Pro
  * See: https://datatracker.ietf.org/doc/html/rfc6749#section-4.1
  * @param event - The H3 event.
  */
-async function handleAuthorizationCode(event: H3Event<EventHandlerRequest>): Promise<void> {
+async function handleAuthorizationCode(event: H3Event<EventHandlerRequest>) {
   const { clientId, clientSecret, error } = await getClientIdAndSecret(event);
   const body = await readBody(event);
   if (error) {
@@ -242,7 +240,7 @@ async function handleAuthorizationCode(event: H3Event<EventHandlerRequest>): Pro
  * See: https://datatracker.ietf.org/doc/html/rfc6749#section-6
  * @param event - The H3 event.
  */
-async function handleRefreshToken(event: H3Event<EventHandlerRequest>): Promise<void> {
+async function handleRefreshToken(event: H3Event<EventHandlerRequest>) {
   const body = await readBody(event);
   const refreshToken = body.refresh_token;
   if (!refreshToken) {
@@ -324,7 +322,7 @@ async function handleRefreshToken(event: H3Event<EventHandlerRequest>): Promise<
  * @param event - The H3 event.
  * @returns Promise to complete.
  */
-async function handleTokenExchange(event: H3Event<EventHandlerRequest>): Promise<void> {
+async function handleTokenExchange(event: H3Event<EventHandlerRequest>) {
   const body = await readBody(event)
   return exchangeExternalAuthToken(event, body.client_id, body.subject_token, body.subject_token_type);
 }
@@ -332,32 +330,27 @@ async function handleTokenExchange(event: H3Event<EventHandlerRequest>): Promise
 /**
  * Exchanges an existing token for a new set of tokens.
  * See: https://datatracker.ietf.org/doc/html/rfc8693
- * @param req - The HTTP request.
- * @param res - The HTTP response.
+ * @param event - The H3 event.
  * @param clientId - The client application ID.
  * @param subjectToken - The subject token. Only access tokens are currently supported.
  * @param subjectTokenType - The subject token type as defined in Section 3.  Only "urn:ietf:params:oauth:token-type:access_token" is currently supported.
  */
 export async function exchangeExternalAuthToken(
-  req: Request,
-  res: Response,
+  event: H3Event<EventHandlerRequest>,
   clientId: string,
   subjectToken: string,
   subjectTokenType: OAuthTokenType
-): Promise<void> {
+) {
   if (!clientId) {
-    sendTokenError(res, 'invalid_request', 'Invalid client');
-    return;
+    return sendTokenError(event, 'invalid_request', 'Invalid client');
   }
 
   if (!subjectToken) {
-    sendTokenError(res, 'invalid_request', 'Invalid subject_token');
-    return;
+    return sendTokenError(event, 'invalid_request', 'Invalid subject_token');
   }
 
   if (subjectTokenType !== OAuthTokenType.AccessToken) {
-    sendTokenError(res, 'invalid_request', 'Invalid subject_token_type');
-    return;
+    return sendTokenError(event, 'invalid_request', 'Invalid subject_token_type');
   }
 
   const systemRepo = getSystemRepo();
@@ -365,8 +358,7 @@ export async function exchangeExternalAuthToken(
   const client = await systemRepo.readResource<ClientApplication>('ClientApplication', clientId);
   const idp = client.identityProvider;
   if (!idp) {
-    sendTokenError(res, 'invalid_request', 'Invalid client');
-    return;
+    return sendTokenError(event, 'invalid_request', 'Invalid client');
   }
 
   let userInfo;
@@ -374,8 +366,7 @@ export async function exchangeExternalAuthToken(
     userInfo = await getExternalUserInfo(idp, subjectToken);
   } catch (err: any) {
     const outcome = normalizeOperationOutcome(err);
-    sendTokenError(res, 'invalid_request', normalizeErrorString(err), getStatus(outcome));
-    return;
+    return sendTokenError(event, 'invalid_request', normalizeErrorString(err), getStatus(outcome));
   }
 
   let email: string | undefined = undefined;
@@ -386,23 +377,25 @@ export async function exchangeExternalAuthToken(
     email = userInfo.email as string;
   }
 
+  const body = await readBody(event)
+
   const login = await tryLogin({
     authMethod: 'exchange',
     email,
     externalId,
     projectId,
     clientId,
-    scope: req.body.scope || 'openid offline',
-    nonce: req.body.nonce || randomUUID(),
-    remoteAddress: req.ip,
-    userAgent: req.get('User-Agent'),
+    scope: body.scope || 'openid offline',
+    nonce: body.nonce || randomUUID(),
+    remoteAddress: getRequestIP(event),
+    userAgent: getHeader(event, 'User-Agent'),
   });
 
   const membership = await systemRepo.readReference<ProjectMembership>(
     login.membership as Reference<ProjectMembership>
   );
 
-  await sendTokenResponse(res, login, membership, client.refreshTokenLifetime);
+  return await sendTokenResponse(event, login, membership, client.refreshTokenLifetime);
 }
 
 /**
@@ -414,22 +407,23 @@ export async function exchangeExternalAuthToken(
  * 3. Form body (client_secret_post)
  *
  * See SMART "token_endpoint_auth_methods_supported"
- * @param req - The HTTP request.
+ * @param event - The H3 event.
  * @returns The client ID and secret on success, or an error message on failure.
  */
-async function getClientIdAndSecret(req: Request): Promise<ClientIdAndSecret> {
-  if (req.body.client_assertion_type) {
-    return parseClientAssertion(req.body.client_assertion_type, req.body.client_assertion);
+async function getClientIdAndSecret(event: H3Event<EventHandlerRequest>): Promise<ClientIdAndSecret> {
+  const body = await readBody(event)
+  if (body.client_assertion_type) {
+    return parseClientAssertion(body.client_assertion_type, body.client_assertion);
   }
 
-  const authHeader = req.headers.authorization;
+  const authHeader = getHeader(event, 'Authorization');
   if (authHeader) {
     return parseAuthorizationHeader(authHeader);
   }
 
   return {
-    clientId: req.body.client_id,
-    clientSecret: req.body.client_secret,
+    clientId: body.client_id,
+    clientSecret: body.client_secret,
   };
 }
 
@@ -464,7 +458,7 @@ async function parseClientAssertion(
     return { error: 'Invalid client assertion' };
   }
 
-  const { tokenUrl } = getConfig();
+  const { tokenUrl } = useRuntimeConfig().fhir;
   const claims = parseJWTPayload(clientAssertion);
 
   if (claims.aud !== tokenUrl) {
@@ -528,20 +522,18 @@ async function parseAuthorizationHeader(authHeader: string): Promise<ClientIdAnd
 }
 
 async function validateClientIdAndSecret(
-  res: Response,
+  event: H3Event<EventHandlerRequest>,
   client: ClientApplication | undefined,
   clientSecret: string
-): Promise<boolean> {
+) {
   if (!client?.secret) {
-    sendTokenError(res, 'invalid_request', 'Invalid client');
-    return false;
+    return sendTokenError(event, 'invalid_request', 'Invalid client');
   }
 
   // Use a timing-safe-equal here so that we don't expose timing information which could be
   // used to infer the secret value
   if (!timingSafeEqualStr(client.secret, clientSecret)) {
-    sendTokenError(res, 'invalid_request', 'Invalid secret');
-    return false;
+    return sendTokenError(event, 'invalid_request', 'Invalid secret');
   }
 
   return true;
@@ -549,18 +541,18 @@ async function validateClientIdAndSecret(
 
 /**
  * Sends a successful token response.
- * @param res - The HTTP response.
+ * @param event - The H3 event.
  * @param login - The user login.
  * @param membership - The project membership.
  * @param refreshLifetime - The refresh token duration.
  */
 async function sendTokenResponse(
-  res: Response,
+  event: H3Event<EventHandlerRequest>,
   login: Login,
   membership: ProjectMembership,
   refreshLifetime?: string
-): Promise<void> {
-  const config = getConfig();
+) {
+  const { baseUrl } = useRuntimeConfig().fhir;
   const tokens = await getAuthTokens(login, membership.profile as Reference<ProfileResource>, refreshLifetime);
   let patient = undefined;
   let encounter = undefined;
@@ -583,14 +575,15 @@ async function sendTokenResponse(
     try {
       topic = await getTopicForUser(userId);
     } catch (err: unknown) {
-      sendTokenError(res, normalizeErrorString(err));
-      return;
+      return sendTokenError(event, normalizeErrorString(err));
     }
-    fhircastProps['hub.url'] = config.baseUrl + 'fhircast/STU3/'; // TODO: Figure out how to handle the split between STU2 and STU3...
+    fhircastProps['hub.url'] = baseUrl + 'fhircast/STU3/'; // TODO: Figure out how to handle the split between STU2 and STU3...
     fhircastProps['hub.topic'] = topic;
   }
 
-  res.status(200).json({
+
+
+  return {
     token_type: 'Bearer',
     expires_in: 3600,
     scope: login.scope,
@@ -601,25 +594,29 @@ async function sendTokenResponse(
     profile: membership.profile,
     patient,
     encounter,
-    smart_style_url: config.baseUrl + 'fhir/R4/.well-known/smart-styles.json',
+    smart_style_url: baseUrl + 'fhir/R4/.well-known/smart-styles.json',
     need_patient_banner: !!patient,
     ...fhircastProps, // Spreads no props when FHIRcast scopes not present
-  });
+  };
 }
 
 /**
  * Sends an OAuth2 response.
- * @param res - The HTTP response.
+ * @param event - The H3 event.
  * @param error - The error code.  See: https://datatracker.ietf.org/doc/html/rfc6749#appendix-A.7
  * @param description - The error description.  See: https://datatracker.ietf.org/doc/html/rfc6749#appendix-A.8
  * @param status - The HTTP status code.
  * @returns Reference to the HTTP response.
  */
-function sendTokenError(res: Response, error: string, description?: string, status = 400): Response {
-  return res.status(status).json({
+function sendTokenError(event: H3Event<EventHandlerRequest>, error: string, description?: string, status = 400) {
+  setResponseHeader(event, "Content-Type", "application/json");
+
+  setResponseStatus(event, status, error);
+
+  return send(event, JSON.stringify({
     error,
     error_description: description,
-  });
+  }));
 }
 
 /**

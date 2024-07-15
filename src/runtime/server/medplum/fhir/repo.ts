@@ -60,10 +60,10 @@ import {
   import { Pool, PoolClient } from 'pg';
   import { Operation, applyPatch } from 'rfc6902';
   import validator from 'validator';
-  import { getConfig } from '../config';
-  import { getLogger, getRequestContext } from '../context';
+  import { useRuntimeConfig } from '#imports';
+  import { getLogger, getRequestContext } from '../../utils/context';
   import { DatabaseMode, getDatabasePool } from '#imports';
-  import { getRedis } from '../redis';
+  import { getRedis } from '../../utils/redis';
   import { r4ProjectId } from '../../utils/seed';
   import {
     AuditEventOutcome,
@@ -1885,8 +1885,8 @@ import {
         resource,
         query
       );
-  
-      if (getConfig().saveAuditEvents && resource?.resourceType !== 'AuditEvent') {
+      const config = useRuntimeConfig().fhir
+      if (config.saveAuditEvents && resource?.resourceType !== 'AuditEvent') {
         auditEvent.id = randomUUID();
         this.updateResourceImpl(auditEvent, true).catch(console.error);
       }

@@ -4,6 +4,8 @@ import { randomUUID } from 'crypto';
 import { Response } from 'express';
 import { Result, ValidationError } from 'express-validator';
 import { buildTracingExtension } from '../../utils/context';
+import type { H3Event, EventHandlerRequest } from 'h3';
+import { setResponseHeader, setResponseStatus, send } from 'h3'
 
 export function invalidRequest(errors: Result<ValidationError>): OperationOutcome {
   return {
@@ -26,12 +28,16 @@ function getValidationErrorExpression(error: ValidationError): string[] | undefi
   return undefined;
 }
 
-export function sendOutcome(res: Response, outcome: OperationOutcome): Response {
+export function sendOutcome(event: H3Event<EventHandlerRequest>, outcome: OperationOutcome) {
+
   if (isAccepted(outcome) && outcome.issue?.[0].diagnostics) {
-    res.set('Content-Location', outcome.issue[0].diagnostics);
+    setResponseHeader(event, "content-location", outcome.issue[0].diagnostics);
   }
-  return res.status(getStatus(outcome)).json({
+  
+  setResponseStatus(event, getStatus(outcome))
+
+  return send(event, JSON.stringify({
     ...outcome,
-    extension: buildTracingExtension(),
-  } as OperationOutcome);
+    extension: buildTracingExtension()
+  } as OperationOutcome))
 }
