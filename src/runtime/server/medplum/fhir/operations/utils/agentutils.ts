@@ -13,16 +13,15 @@ import {
   parseSearchRequest,
   serverError,
 } from '@medplum/core';
-import { FhirResponse } from '@medplum/fhir-router';
+import { FhirRequest, FhirResponse } from '@medplum/fhir-router';
 import { Agent, Bundle, BundleEntry, Device, OperationOutcome, Parameters } from '@medplum/fhirtypes';
+import { Request } from 'express';
 import { randomUUID } from 'node:crypto';
 import { isIPv4 } from 'node:net';
 import { getAuthenticatedContext } from '../../../../utils/context';
 import { getRedis, getRedisSubscriber } from '../../../../utils/redis';
 import { Repository } from '../../repo';
 import { AgentPushParameters } from '../agentpush';
-import type { H3Event, EventHandlerRequest } from 'h3';
-import  { sendRedirect, readBody, getQuery, createError, getCookie, getHeader, getRouterParams } from '#imports';
 
 export const MAX_AGENTS_PER_PAGE = 100;
 
@@ -37,21 +36,19 @@ export const MAX_AGENTS_PER_PAGE = 100;
  * If using "/Agent/$push?identifier=...", then the agent is searched by identifier.
  * Otherwise, returns undefined.
  *
- * @param event - The H3 event.
+ * @param req - The HTTP request.
  * @param repo - The repository.
  * @returns The agent, or undefined if not found.
  */
-export async function getAgentForRequest(event: H3Event<EventHandlerRequest>, repo: Repository): Promise<Agent | undefined> {
-
-
+export async function getAgentForRequest(req: Request | FhirRequest, repo: Repository): Promise<Agent | undefined> {
   // Prefer to search by ID from path parameter
-  const { id } = getRouterParams(event);
+  const { id } = req.params;
   if (id) {
     return repo.readResource<Agent>('Agent', id);
   }
 
   // Otherwise, search by identifier
-  const { identifier } = getQuery(event);
+  const { identifier } = req.query;
   if (identifier && typeof identifier === 'string') {
     return repo.searchOne<Agent>({
       resourceType: 'Agent',
@@ -66,17 +63,16 @@ export async function getAgentForRequest(event: H3Event<EventHandlerRequest>, re
 /**
  * Returns the Agents for a request.
  *
- * @param event - The H3 event.
+ * @param req - The HTTP request.
  * @param repo - The repository.
  * @returns The agent, or undefined if not found.
  */
-export async function getAgentsForRequest(event: H3Event<EventHandlerRequest>, repo: Repository): Promise<Agent[] | undefined> {
-  const { id } = getRouterParams(event);
-  if (id) {
-    const agent = await getAgentForRequest(event, repo);
+export async function getAgentsForRequest(req: FhirRequest, repo: Repository): Promise<Agent[] | undefined> {
+  if (req.params.id) {
+    const agent = await getAgentForRequest(req, repo);
     return agent ? [agent] : undefined;
   }
-  return repo.searchResources(parseSearchRequest('Agent', getQuery(event)));
+  return repo.searchResources(parseSearchRequest('Agent', req.query));
 }
 
 export async function getDevice(repo: Repository, params: AgentPushParameters): Promise<Device | undefined> {
@@ -97,29 +93,22 @@ export async function getDevice(repo: Repository, params: AgentPushParameters): 
   return undefined;
 }
 
-type BulkAgentOperationQuery = {
-  _count: string
-}
-
 export async function handleBulkAgentOperation(
-  event: H3Event<EventHandlerRequest>,
+  req: FhirRequest,
   handler: (agent: Agent) => Promise<FhirResponse>
 ): Promise<FhirResponse> {
   const { repo } = getAuthenticatedContext();
 
-  const { _count } = getQuery<BulkAgentOperationQuery>(event);
-  const { id } = getRouterParams(event);
-
-  if (_count && Number.parseInt(_count, 10) > MAX_AGENTS_PER_PAGE) {
-    return [badRequest(`'_count' of ${_count} is greater than max of ${MAX_AGENTS_PER_PAGE}`)];
+  if (req.query._count && Number.parseInt(req.query._count, 10) > MAX_AGENTS_PER_PAGE) {
+    return [badRequest(`'_count' of ${req.query._count} is greater than max of ${MAX_AGENTS_PER_PAGE}`)];
   }
 
-  const agents = await getAgentsForRequest(event, repo);
+  const agents = await getAgentsForRequest(req, repo);
   if (!agents?.length) {
     return [badRequest('No agent(s) for given query')];
   }
 
-  if (id) {
+  if (req.params.id) {
     return handler(agents[0]);
   }
 

@@ -2,7 +2,7 @@ import { created, forbidden, getResourceTypes, isResourceType, Operator } from '
 import { FhirRequest, FhirResponse } from '@medplum/fhir-router';
 import { Binary, Project, Resource, ResourceType } from '@medplum/fhirtypes';
 import { randomUUID } from 'node:crypto';
-import { getAuthenticatedContext } from '../../context';
+import { getAuthenticatedContext } from '../../../utils/context';
 import { Repository } from '../repo';
 import { getBinaryStorage } from '../storage';
 import { buildBinaryIds } from './utils/binary';

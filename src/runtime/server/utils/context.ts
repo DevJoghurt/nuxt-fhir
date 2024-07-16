@@ -6,8 +6,8 @@ import { NextFunction, Request, Response } from 'express';
 import { useRuntimeConfig } from '#imports';
 import { getRepoForLogin } from '../medplum/fhir/accesspolicy';
 import { Repository, getSystemRepo } from '../medplum/fhir/repo';
-import { AuthState, authenticateTokenImpl, isExtendedMode } from './oauth/middleware';
-import { parseTraceparent } from './traceparent';
+import { AuthState, authenticateTokenImpl, isExtendedMode } from '../medplum/oauth/middleware';
+import { parseTraceparent } from '../medplum/traceparent';
 
 export class RequestContext {
   readonly requestId: string;

@@ -50,10 +50,10 @@ export async function deployHandler(req: FhirRequest): Promise<FhirResponse> {
     });
 
     // Deploy the bot
-    // TODO: find a bot runtime solution
+    /*
     if (updatedBot.runtimeVersion === 'awslambda') {
-
-    }
+      // Deploy to AWS Lambda not supported
+    }*/
 
     return [allOk];
   } catch (err) {

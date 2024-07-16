@@ -6,7 +6,7 @@
 import { ContentType, deepClone, OAuthGrantType, OAuthTokenAuthMethod } from '@medplum/core';
 import { AccessPolicy, AccessPolicyResource } from '@medplum/fhirtypes';
 import { Request, Response } from 'express';
-import { useRuntimeConfig } from '#imports';
+import { getConfig } from '../../utils/config';
 
 export interface SmartScope {
   readonly permissionType: 'patient' | 'user' | 'system';
@@ -22,27 +22,21 @@ export interface SmartScope {
  * @param res - The HTTP response.
  */
 export function smartConfigurationHandler(_req: Request, res: Response): void {
-  const { 
-    issuer,
-    jwksUrl,
-    authorizeUrl,
-    tokenUrl
-} = useRuntimeConfig().fhir;
-
+  const config = getConfig();
   res
     .status(200)
     .contentType(ContentType.JSON)
     .json({
-      issuer: issuer,
-      jwks_uri: jwksUrl,
-      authorization_endpoint: authorizeUrl,
+      issuer: config.issuer,
+      jwks_uri: config.jwksUrl,
+      authorization_endpoint: config.authorizeUrl,
       grant_types_supported: [
         OAuthGrantType.ClientCredentials,
         OAuthGrantType.AuthorizationCode,
         OAuthGrantType.RefreshToken,
         OAuthGrantType.TokenExchange,
       ],
-      token_endpoint: tokenUrl,
+      token_endpoint: config.tokenUrl,
       token_endpoint_auth_methods_supported: [
         OAuthTokenAuthMethod.ClientSecretBasic,
         OAuthTokenAuthMethod.ClientSecretPost,

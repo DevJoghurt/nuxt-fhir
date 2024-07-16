@@ -1,6 +1,7 @@
 import { OperationOutcomeError, badRequest, capitalize, isEmpty, isResource, validateResource } from '@medplum/core';
 import { FhirRequest } from '@medplum/fhir-router';
 import { OperationDefinition, OperationDefinitionParameter, Parameters, ParametersParameter } from '@medplum/fhirtypes';
+import { Request } from 'express';
 
 export function parseParameters<T>(input: T | Parameters): T {
   if (input && typeof input === 'object' && 'resourceType' in input && input.resourceType === 'Parameters') {
@@ -16,10 +17,10 @@ export function parseParameters<T>(input: T | Parameters): T {
  * Parse an incoming Operation request and extract the defined input parameters into a dictionary object.
  *
  * @param operation - The Operation for which the request is intended.
- * @param event - The H3 event.
+ * @param req - The incoming request.
  * @returns A dictionary of parameter names to values.
  */
-export function parseInputParameters<T>(operation: OperationDefinition, req: FhirRequest): T {
+export function parseInputParameters<T>(operation: OperationDefinition, req: Request | FhirRequest): T {
   if (!operation.parameter) {
     return {} as any;
   }

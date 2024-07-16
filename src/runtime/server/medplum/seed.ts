@@ -2,11 +2,11 @@ import { createReference } from '@medplum/core';
 import { Practitioner, Project, ProjectMembership, User } from '@medplum/fhirtypes';
 import { NIL as nullUuid, v5 } from 'uuid';
 import { bcryptHashPassword } from './auth/utils';
-import { getSystemRepo } from '../medplum/fhir/repo';
-import { globalLogger } from './logger';
-import { rebuildR4SearchParameters } from '../medplum/seeds/searchparameters';
-import { rebuildR4StructureDefinitions } from '../medplum/seeds/structuredefinitions';
-import { rebuildR4ValueSets } from '../medplum/seeds/valuesets';
+import { getSystemRepo } from './fhir/repo';
+import { globalLogger } from '../utils/logger';
+import { rebuildR4SearchParameters } from './seeds/searchparameters';
+import { rebuildR4StructureDefinitions } from './seeds/structuredefinitions';
+import { rebuildR4ValueSets } from './seeds/valuesets';
 
 export const r4ProjectId = v5('R4', nullUuid);
 

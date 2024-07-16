@@ -8,8 +8,8 @@ import {
   Reference,
   Resource,
 } from '@medplum/fhirtypes';
-import { useRuntimeConfig } from '#imports';
-import { buildTracingExtension } from '../context';
+import { buildTracingExtension } from '../../utils/context';
+import { getConfig } from '../../utils/config';
 
 /*
  * This file includes a collection of utility functions for working with AuditEvents.
@@ -205,7 +205,7 @@ function createAuditEvent(
   searchQuery?: string
 ): AuditEvent {
 
-  const { baseUrl } = useRuntimeConfig().fhir
+  const { baseUrl } = getConfig();
 
   let entity: AuditEventEntity[] | undefined = undefined;
   if (resource) {

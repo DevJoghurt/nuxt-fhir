@@ -15,11 +15,11 @@ import {
 } from '@medplum/core';
 import { ClientApplication, Login, Project, ProjectMembership, Reference } from '@medplum/fhirtypes';
 import { createHash, randomUUID } from 'crypto';
-import type { H3Event, EventHandlerRequest } from 'h3'
-import { setResponseHeader, setResponseStatus, send } from "h3";
-import  { readBody, createError, getHeader, getRequestIP, useRuntimeConfig } from '#imports'
+import { Request, RequestHandler, Response } from 'express';
 import { JWTVerifyOptions, createRemoteJWKSet, jwtVerify } from 'jose';
+import { asyncWrap } from '../async';
 import { getProjectIdByClientId } from '../auth/utils';
+import { getConfig } from '../../utils/config';
 import { getAccessPolicyForLogin } from '../fhir/accesspolicy';
 import { getSystemRepo } from '../fhir/repo';
 import { getTopicForUser } from '../fhircast/utils';
@@ -49,53 +49,57 @@ type FhircastProps = { 'hub.topic': string; 'hub.url': string };
  *
  * See: https://openid.net/specs/openid-connect-core-1_0.html#TokenEndpoint
  */
-export const tokenHandler = async (event: H3Event<EventHandlerRequest>) => {
-
-  if (getHeader(event,"Content-Type") !== ContentType.FORM_URL_ENCODED) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Unsupported content type',
-    })
+export const tokenHandler: RequestHandler = asyncWrap(async (req: Request, res: Response) => {
+  if (!req.is(ContentType.FORM_URL_ENCODED)) {
+    res.status(400).send('Unsupported content type');
+    return;
   }
 
-  const body = await readBody(event)
-  const grantType = body.grant_type as OAuthGrantType;
+  const grantType = req.body.grant_type as OAuthGrantType;
   if (!grantType) {
-    return sendTokenError(event, 'invalid_request', 'Missing grant_type');
+    sendTokenError(res, 'invalid_request', 'Missing grant_type');
+    return;
   }
 
   switch (grantType) {
     case OAuthGrantType.ClientCredentials:
-      return await handleClientCredentials(event);
+      await handleClientCredentials(req, res);
+      break;
     case OAuthGrantType.AuthorizationCode:
-      return await handleAuthorizationCode(event);
+      await handleAuthorizationCode(req, res);
+      break;
     case OAuthGrantType.RefreshToken:
-      return await handleRefreshToken(event);
+      await handleRefreshToken(req, res);
+      break;
     case OAuthGrantType.TokenExchange:
-      return await handleTokenExchange(event);
+      await handleTokenExchange(req, res);
+      break;
     default:
-      return sendTokenError(event, 'invalid_request', 'Unsupported grant_type');
+      sendTokenError(res, 'invalid_request', 'Unsupported grant_type');
   }
-};
+});
 
 /**
  * Handles the "Client Credentials" OAuth flow.
  * See: https://datatracker.ietf.org/doc/html/rfc6749#section-4.4
- * @param event - The H3 event.
+ * @param req - The HTTP request.
+ * @param res - The HTTP response.
  */
-async function handleClientCredentials(event: H3Event<EventHandlerRequest>) {
-  const { clientId, clientSecret, error } = await getClientIdAndSecret(event);
-  const body = await readBody(event);
+async function handleClientCredentials(req: Request, res: Response): Promise<void> {
+  const { clientId, clientSecret, error } = await getClientIdAndSecret(req);
   if (error) {
-    return sendTokenError(event, 'invalid_request', error);
+    sendTokenError(res, 'invalid_request', error);
+    return;
   }
 
   if (!clientId) {
-    return sendTokenError(event, 'invalid_request', 'Missing client_id');
+    sendTokenError(res, 'invalid_request', 'Missing client_id');
+    return;
   }
 
   if (!clientSecret) {
-    return sendTokenError(event, 'invalid_request', 'Missing client_secret');
+    sendTokenError(res, 'invalid_request', 'Missing client_secret');
+    return;
   }
 
   const systemRepo = getSystemRepo();
@@ -103,26 +107,27 @@ async function handleClientCredentials(event: H3Event<EventHandlerRequest>) {
   try {
     client = await systemRepo.readResource<ClientApplication>('ClientApplication', clientId);
   } catch (err) {
-    return sendTokenError(event, 'invalid_request', 'Invalid client');
+    sendTokenError(res, 'invalid_request', 'Invalid client');
+    return;
   }
 
   if (client.status && client.status !== 'active') {
-    return sendTokenError(event, 'invalid_request', 'Invalid client');
+    sendTokenError(res, 'invalid_request', 'Invalid client');
+    return;
   }
 
-  if (!(await validateClientIdAndSecret(event, client, clientSecret))) {
+  if (!(await validateClientIdAndSecret(res, client, clientSecret))) {
     return;
   }
 
   const membership = await getClientApplicationMembership(client);
   if (!membership) {
-    return sendTokenError(event, 'invalid_request', 'Invalid client');
+    sendTokenError(res, 'invalid_request', 'Invalid client');
+    return;
   }
 
   const project = await systemRepo.readReference(membership.project as Reference<Project>);
-  const scope = (body.scope || 'openid') as string;
-
-  const userAgent = getHeader(event, 'User-Agent');
+  const scope = (req.body.scope || 'openid') as string;
 
   const login = await systemRepo.createResource<Login>({
     resourceType: 'Login',
@@ -133,8 +138,8 @@ async function handleClientCredentials(event: H3Event<EventHandlerRequest>) {
     authTime: new Date().toISOString(),
     granted: true,
     scope,
-    remoteAddress: getRequestIP(event),
-    userAgent,
+    remoteAddress: req.ip,
+    userAgent: req.get('User-Agent'),
   });
 
   // TODO: build full AuthState object, including on-behalf-of
@@ -143,27 +148,30 @@ async function handleClientCredentials(event: H3Event<EventHandlerRequest>) {
     const accessPolicy = await getAccessPolicyForLogin({ project, login, membership });
     await checkIpAccessRules(login, accessPolicy);
   } catch (err) {
-    return sendTokenError(event, 'invalid_request', normalizeErrorString(err));
+    sendTokenError(res, 'invalid_request', normalizeErrorString(err));
+    return;
   }
 
-  return await sendTokenResponse(event, login, membership, client.refreshTokenLifetime);
+  await sendTokenResponse(res, login, membership, client.refreshTokenLifetime);
 }
 
 /**
  * Handles the "Authorization Code Grant" flow.
  * See: https://datatracker.ietf.org/doc/html/rfc6749#section-4.1
- * @param event - The H3 event.
+ * @param req - The HTTP request.
+ * @param res - The HTTP response.
  */
-async function handleAuthorizationCode(event: H3Event<EventHandlerRequest>) {
-  const { clientId, clientSecret, error } = await getClientIdAndSecret(event);
-  const body = await readBody(event);
+async function handleAuthorizationCode(req: Request, res: Response): Promise<void> {
+  const { clientId, clientSecret, error } = await getClientIdAndSecret(req);
   if (error) {
-    return sendTokenError(event, 'invalid_request', error);
+    sendTokenError(res, 'invalid_request', error);
+    return;
   }
 
-  const { code } = await readBody(event);
+  const code = req.body.code;
   if (!code) {
-    return sendTokenError(event, 'invalid_request', 'Missing code');
+    sendTokenError(res, 'invalid_request', 'Missing code');
+    return;
   }
 
   const systemRepo = getSystemRepo();
@@ -179,26 +187,31 @@ async function handleAuthorizationCode(event: H3Event<EventHandlerRequest>) {
   });
 
   if (!searchResult.entry || searchResult.entry.length === 0) {
-    return sendTokenError(event, 'invalid_request', 'Invalid code');
+    sendTokenError(res, 'invalid_request', 'Invalid code');
+    return;
   }
 
   const login = searchResult.entry[0].resource as Login;
 
   if (clientId && login.client?.reference !== 'ClientApplication/' + clientId) {
-    return sendTokenError(event, 'invalid_request', 'Invalid client');
+    sendTokenError(res, 'invalid_request', 'Invalid client');
+    return;
   }
 
   if (!login.membership) {
-    return sendTokenError(event, 'invalid_request', 'Invalid profile');
+    sendTokenError(res, 'invalid_request', 'Invalid profile');
+    return;
   }
 
   if (login.granted) {
     await revokeLogin(login);
-    return sendTokenError(event, 'invalid_grant', 'Token already granted');
+    sendTokenError(res, 'invalid_grant', 'Token already granted');
+    return;
   }
 
   if (login.revoked) {
-    return sendTokenError(event, 'invalid_grant', 'Token revoked');
+    sendTokenError(res, 'invalid_grant', 'Token revoked');
+    return;
   }
 
   let client: ClientApplication | undefined;
@@ -209,49 +222,55 @@ async function handleAuthorizationCode(event: H3Event<EventHandlerRequest>) {
       client = await getClientApplication(resolveId(login.client) as string);
     }
   } catch (err) {
-    return sendTokenError(event, 'invalid_request', 'Invalid client');
+    sendTokenError(res, 'invalid_request', 'Invalid client');
+    return;
   }
 
   if (clientSecret) {
-    if (!(await validateClientIdAndSecret(event, client, clientSecret))) {
+    if (!(await validateClientIdAndSecret(res, client, clientSecret))) {
       return;
     }
   } else if (!client?.pkceOptional) {
     if (login.codeChallenge) {
-      const codeVerifier = body.code_verifier;
+      const codeVerifier = req.body.code_verifier;
       if (!codeVerifier) {
-        return sendTokenError(event, 'invalid_request', 'Missing code verifier');
+        sendTokenError(res, 'invalid_request', 'Missing code verifier');
+        return;
       }
 
       if (!verifyCode(login.codeChallenge, login.codeChallengeMethod as string, codeVerifier)) {
-        return sendTokenError(event, 'invalid_request', 'Invalid code verifier');
+        sendTokenError(res, 'invalid_request', 'Invalid code verifier');
+        return;
       }
     } else {
-      return sendTokenError(event, 'invalid_request', 'Missing verification context');
+      sendTokenError(res, 'invalid_request', 'Missing verification context');
+      return;
     }
   }
 
   const membership = await systemRepo.readReference<ProjectMembership>(login.membership);
-  return await sendTokenResponse(event, login, membership, client?.refreshTokenLifetime);
+  await sendTokenResponse(res, login, membership, client?.refreshTokenLifetime);
 }
 
 /**
  * Handles the "Refresh" flow.
  * See: https://datatracker.ietf.org/doc/html/rfc6749#section-6
- * @param event - The H3 event.
+ * @param req - The HTTP request.
+ * @param res - The HTTP response.
  */
-async function handleRefreshToken(event: H3Event<EventHandlerRequest>) {
-  const body = await readBody(event);
-  const refreshToken = body.refresh_token;
+async function handleRefreshToken(req: Request, res: Response): Promise<void> {
+  const refreshToken = req.body.refresh_token;
   if (!refreshToken) {
-    return sendTokenError(event, 'invalid_request', 'Invalid refresh token');
+    sendTokenError(res, 'invalid_request', 'Invalid refresh token');
+    return;
   }
 
   let claims: MedplumRefreshTokenClaims;
   try {
     claims = (await verifyJwt(refreshToken)).payload as MedplumRefreshTokenClaims;
   } catch (err) {
-    return sendTokenError(event, 'invalid_request', 'Invalid refresh token');
+    sendTokenError(res, 'invalid_request', 'Invalid refresh token');
+    return;
   }
 
   const systemRepo = getSystemRepo();
@@ -259,32 +278,38 @@ async function handleRefreshToken(event: H3Event<EventHandlerRequest>) {
 
   if (login.refreshSecret === undefined) {
     // This token does not have a refresh available
-    return sendTokenError(event, 'invalid_request', 'Invalid token');
+    sendTokenError(res, 'invalid_request', 'Invalid token');
+    return;
   }
 
   if (login.revoked) {
-    return sendTokenError(event, 'invalid_grant', 'Token revoked');
+    sendTokenError(res, 'invalid_grant', 'Token revoked');
+    return;
   }
 
   // Use a timing-safe-equal here so that we don't expose timing information which could be
   // used to infer the secret value
   if (!timingSafeEqualStr(login.refreshSecret, claims.refresh_secret)) {
-    return sendTokenError(event, 'invalid_request', 'Invalid token');
+    sendTokenError(res, 'invalid_request', 'Invalid token');
+    return;
   }
 
-  const authHeader = getHeader(event, 'Authorization');
+  const authHeader = req.headers.authorization;
   if (authHeader) {
     if (!authHeader.startsWith('Basic ')) {
-      return sendTokenError(event, 'invalid_request', 'Invalid authorization header');
+      sendTokenError(res, 'invalid_request', 'Invalid authorization header');
+      return;
     }
     const base64Credentials = authHeader.split(' ')[1];
     const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
     const [clientId, clientSecret] = credentials.split(':');
     if (clientId !== resolveId(login.client)) {
-      return sendTokenError(event, 'invalid_grant', 'Incorrect client');
+      sendTokenError(res, 'invalid_grant', 'Incorrect client');
+      return;
     }
     if (!clientSecret) {
-      return sendTokenError(event, 'invalid_grant', 'Incorrect client secret');
+      sendTokenError(res, 'invalid_grant', 'Incorrect client secret');
+      return;
     }
   }
 
@@ -294,7 +319,8 @@ async function handleRefreshToken(event: H3Event<EventHandlerRequest>) {
     try {
       client = await systemRepo.readResource<ClientApplication>('ClientApplication', clientId);
     } catch (err) {
-      return sendTokenError(event, 'invalid_request', 'Invalid client');
+      sendTokenError(res, 'invalid_request', 'Invalid client');
+      return;
     }
   }
 
@@ -305,52 +331,57 @@ async function handleRefreshToken(event: H3Event<EventHandlerRequest>) {
   const updatedLogin = await systemRepo.updateResource<Login>({
     ...login,
     refreshSecret: generateSecret(32),
-    remoteAddress: getRequestIP(event),
-    userAgent: getHeader(event, 'User-Agent'),
+    remoteAddress: req.ip,
+    userAgent: req.get('User-Agent'),
   });
 
   const membership = await systemRepo.readReference<ProjectMembership>(
     login.membership as Reference<ProjectMembership>
   );
 
-  return await sendTokenResponse(event, updatedLogin, membership, refreshTokenLifetime);
+  await sendTokenResponse(res, updatedLogin, membership, refreshTokenLifetime);
 }
 
 /**
  * Handles the "Exchange" flow.
  * See: https://datatracker.ietf.org/doc/html/rfc8693
- * @param event - The H3 event.
+ * @param req - The HTTP request.
+ * @param res - The HTTP response.
  * @returns Promise to complete.
  */
-async function handleTokenExchange(event: H3Event<EventHandlerRequest>) {
-  const body = await readBody(event)
-  return exchangeExternalAuthToken(event, body.client_id, body.subject_token, body.subject_token_type);
+async function handleTokenExchange(req: Request, res: Response): Promise<void> {
+  return exchangeExternalAuthToken(req, res, req.body.client_id, req.body.subject_token, req.body.subject_token_type);
 }
 
 /**
  * Exchanges an existing token for a new set of tokens.
  * See: https://datatracker.ietf.org/doc/html/rfc8693
- * @param event - The H3 event.
+ * @param req - The HTTP request.
+ * @param res - The HTTP response.
  * @param clientId - The client application ID.
  * @param subjectToken - The subject token. Only access tokens are currently supported.
  * @param subjectTokenType - The subject token type as defined in Section 3.  Only "urn:ietf:params:oauth:token-type:access_token" is currently supported.
  */
 export async function exchangeExternalAuthToken(
-  event: H3Event<EventHandlerRequest>,
+  req: Request,
+  res: Response,
   clientId: string,
   subjectToken: string,
   subjectTokenType: OAuthTokenType
-) {
+): Promise<void> {
   if (!clientId) {
-    return sendTokenError(event, 'invalid_request', 'Invalid client');
+    sendTokenError(res, 'invalid_request', 'Invalid client');
+    return;
   }
 
   if (!subjectToken) {
-    return sendTokenError(event, 'invalid_request', 'Invalid subject_token');
+    sendTokenError(res, 'invalid_request', 'Invalid subject_token');
+    return;
   }
 
   if (subjectTokenType !== OAuthTokenType.AccessToken) {
-    return sendTokenError(event, 'invalid_request', 'Invalid subject_token_type');
+    sendTokenError(res, 'invalid_request', 'Invalid subject_token_type');
+    return;
   }
 
   const systemRepo = getSystemRepo();
@@ -358,7 +389,8 @@ export async function exchangeExternalAuthToken(
   const client = await systemRepo.readResource<ClientApplication>('ClientApplication', clientId);
   const idp = client.identityProvider;
   if (!idp) {
-    return sendTokenError(event, 'invalid_request', 'Invalid client');
+    sendTokenError(res, 'invalid_request', 'Invalid client');
+    return;
   }
 
   let userInfo;
@@ -366,7 +398,8 @@ export async function exchangeExternalAuthToken(
     userInfo = await getExternalUserInfo(idp, subjectToken);
   } catch (err: any) {
     const outcome = normalizeOperationOutcome(err);
-    return sendTokenError(event, 'invalid_request', normalizeErrorString(err), getStatus(outcome));
+    sendTokenError(res, 'invalid_request', normalizeErrorString(err), getStatus(outcome));
+    return;
   }
 
   let email: string | undefined = undefined;
@@ -377,25 +410,23 @@ export async function exchangeExternalAuthToken(
     email = userInfo.email as string;
   }
 
-  const body = await readBody(event)
-
   const login = await tryLogin({
     authMethod: 'exchange',
     email,
     externalId,
     projectId,
     clientId,
-    scope: body.scope || 'openid offline',
-    nonce: body.nonce || randomUUID(),
-    remoteAddress: getRequestIP(event),
-    userAgent: getHeader(event, 'User-Agent'),
+    scope: req.body.scope || 'openid offline',
+    nonce: req.body.nonce || randomUUID(),
+    remoteAddress: req.ip,
+    userAgent: req.get('User-Agent'),
   });
 
   const membership = await systemRepo.readReference<ProjectMembership>(
     login.membership as Reference<ProjectMembership>
   );
 
-  return await sendTokenResponse(event, login, membership, client.refreshTokenLifetime);
+  await sendTokenResponse(res, login, membership, client.refreshTokenLifetime);
 }
 
 /**
@@ -407,23 +438,22 @@ export async function exchangeExternalAuthToken(
  * 3. Form body (client_secret_post)
  *
  * See SMART "token_endpoint_auth_methods_supported"
- * @param event - The H3 event.
+ * @param req - The HTTP request.
  * @returns The client ID and secret on success, or an error message on failure.
  */
-async function getClientIdAndSecret(event: H3Event<EventHandlerRequest>): Promise<ClientIdAndSecret> {
-  const body = await readBody(event)
-  if (body.client_assertion_type) {
-    return parseClientAssertion(body.client_assertion_type, body.client_assertion);
+async function getClientIdAndSecret(req: Request): Promise<ClientIdAndSecret> {
+  if (req.body.client_assertion_type) {
+    return parseClientAssertion(req.body.client_assertion_type, req.body.client_assertion);
   }
 
-  const authHeader = getHeader(event, 'Authorization');
+  const authHeader = req.headers.authorization;
   if (authHeader) {
     return parseAuthorizationHeader(authHeader);
   }
 
   return {
-    clientId: body.client_id,
-    clientSecret: body.client_secret,
+    clientId: req.body.client_id,
+    clientSecret: req.body.client_secret,
   };
 }
 
@@ -458,7 +488,7 @@ async function parseClientAssertion(
     return { error: 'Invalid client assertion' };
   }
 
-  const { tokenUrl } = useRuntimeConfig().fhir;
+  const { tokenUrl } = getConfig();
   const claims = parseJWTPayload(clientAssertion);
 
   if (claims.aud !== tokenUrl) {
@@ -522,18 +552,20 @@ async function parseAuthorizationHeader(authHeader: string): Promise<ClientIdAnd
 }
 
 async function validateClientIdAndSecret(
-  event: H3Event<EventHandlerRequest>,
+  res: Response,
   client: ClientApplication | undefined,
   clientSecret: string
-) {
+): Promise<boolean> {
   if (!client?.secret) {
-    return sendTokenError(event, 'invalid_request', 'Invalid client');
+    sendTokenError(res, 'invalid_request', 'Invalid client');
+    return false;
   }
 
   // Use a timing-safe-equal here so that we don't expose timing information which could be
   // used to infer the secret value
   if (!timingSafeEqualStr(client.secret, clientSecret)) {
-    return sendTokenError(event, 'invalid_request', 'Invalid secret');
+    sendTokenError(res, 'invalid_request', 'Invalid secret');
+    return false;
   }
 
   return true;
@@ -541,18 +573,18 @@ async function validateClientIdAndSecret(
 
 /**
  * Sends a successful token response.
- * @param event - The H3 event.
+ * @param res - The HTTP response.
  * @param login - The user login.
  * @param membership - The project membership.
  * @param refreshLifetime - The refresh token duration.
  */
 async function sendTokenResponse(
-  event: H3Event<EventHandlerRequest>,
+  res: Response,
   login: Login,
   membership: ProjectMembership,
   refreshLifetime?: string
-) {
-  const { baseUrl } = useRuntimeConfig().fhir;
+): Promise<void> {
+  const config = getConfig();
   const tokens = await getAuthTokens(login, membership.profile as Reference<ProfileResource>, refreshLifetime);
   let patient = undefined;
   let encounter = undefined;
@@ -575,15 +607,14 @@ async function sendTokenResponse(
     try {
       topic = await getTopicForUser(userId);
     } catch (err: unknown) {
-      return sendTokenError(event, normalizeErrorString(err));
+      sendTokenError(res, normalizeErrorString(err));
+      return;
     }
-    fhircastProps['hub.url'] = baseUrl + 'fhircast/STU3/'; // TODO: Figure out how to handle the split between STU2 and STU3...
+    fhircastProps['hub.url'] = config.baseUrl + 'fhircast/STU3/'; // TODO: Figure out how to handle the split between STU2 and STU3...
     fhircastProps['hub.topic'] = topic;
   }
 
-
-
-  return {
+  res.status(200).json({
     token_type: 'Bearer',
     expires_in: 3600,
     scope: login.scope,
@@ -594,29 +625,25 @@ async function sendTokenResponse(
     profile: membership.profile,
     patient,
     encounter,
-    smart_style_url: baseUrl + 'fhir/R4/.well-known/smart-styles.json',
+    smart_style_url: config.baseUrl + 'fhir/R4/.well-known/smart-styles.json',
     need_patient_banner: !!patient,
     ...fhircastProps, // Spreads no props when FHIRcast scopes not present
-  };
+  });
 }
 
 /**
  * Sends an OAuth2 response.
- * @param event - The H3 event.
+ * @param res - The HTTP response.
  * @param error - The error code.  See: https://datatracker.ietf.org/doc/html/rfc6749#appendix-A.7
  * @param description - The error description.  See: https://datatracker.ietf.org/doc/html/rfc6749#appendix-A.8
  * @param status - The HTTP status code.
  * @returns Reference to the HTTP response.
  */
-function sendTokenError(event: H3Event<EventHandlerRequest>, error: string, description?: string, status = 400) {
-  setResponseHeader(event, "Content-Type", "application/json");
-
-  setResponseStatus(event, status, error);
-
-  return send(event, JSON.stringify({
+function sendTokenError(res: Response, error: string, description?: string, status = 400): Response {
+  return res.status(status).json({
     error,
     error_description: description,
-  }));
+  });
 }
 
 /**

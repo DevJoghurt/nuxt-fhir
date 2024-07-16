@@ -1,7 +1,9 @@
 import { Binary } from '@medplum/fhirtypes';
+import { createSign } from 'crypto';
 import { copyFileSync, createReadStream, createWriteStream, existsSync, mkdirSync } from 'fs';
 import { resolve, sep } from 'path';
 import { Readable, pipeline } from 'stream';
+import { getConfig } from '../../utils/config';
 
 /**
  * Binary input type.
@@ -54,6 +56,8 @@ export interface BinaryStorage {
   copyBinary(sourceBinary: Binary, destinationBinary: Binary): Promise<void>;
 
   copyFile(sourceKey: string, destinationKey: string): Promise<void>;
+
+  getPresignedUrl(binary: Binary): string;
 }
 
 /**
@@ -117,6 +121,25 @@ class FileSystemStorage implements BinaryStorage {
       mkdirSync(destDir, { recursive: true });
     }
     copyFileSync(resolve(this.baseDir, sourceKey), resolve(this.baseDir, destinationKey));
+  }
+
+  getPresignedUrl(binary: Binary): string {
+    const config = getConfig();
+    const storageBaseUrl = config.storageBaseUrl;
+    const result = new URL(`${storageBaseUrl}${binary.id}/${binary.meta?.versionId}`);
+
+    const dateLessThan = new Date();
+    dateLessThan.setHours(dateLessThan.getHours() + 1);
+    result.searchParams.set('Expires', dateLessThan.getTime().toString());
+
+    const privateKey = { 
+      key: config.signingKey, 
+      passphrase: config.signingKeyPassphrase 
+    };
+    const signature = createSign('sha256').update(result.toString()).sign(privateKey, 'base64');
+    result.searchParams.set('Signature', signature);
+
+    return result.toString();
   }
 
   private getKey(binary: Binary): string {

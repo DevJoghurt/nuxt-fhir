@@ -10,7 +10,7 @@ import {
   Task,
   TaskInput,
 } from '@medplum/fhirtypes';
-import { getAuthenticatedContext } from '../../context';
+import { getAuthenticatedContext } from '../../../utils/context';
 import { Repository } from '../repo';
 import { getOperationDefinition } from './definitions';
 import { parseInputParameters } from './utils/parameters';

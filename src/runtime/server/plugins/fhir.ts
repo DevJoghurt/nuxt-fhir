@@ -1,5 +1,5 @@
 import { defineNitroPlugin } from 'nitropack/runtime'
-import { useRuntimeConfig, initDatabase, closeDatabase, initRedis, closeRedis } from '#imports'
+import { useRuntimeConfig, initDatabase, closeDatabase, initRedis, closeRedis, closeRateLimiter } from '#imports'
 
 export default defineNitroPlugin(async (nitro) => {
 
@@ -12,5 +12,6 @@ export default defineNitroPlugin(async (nitro) => {
     nitro.hooks.hook("close", async () => {
         await closeDatabase()
         await closeRedis()
+        closeRateLimiter()
     })
 })

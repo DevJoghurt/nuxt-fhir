@@ -10,7 +10,7 @@ import {
 import { Reference, User } from '@medplum/fhirtypes';
 import { Request, RequestHandler, Response } from 'express';
 import { asyncWrap } from '../async';
-import { getAuthenticatedContext } from '../context';
+import { getAuthenticatedContext } from '../../utils/context';
 import { getSystemRepo } from '../fhir/repo';
 
 /**

@@ -10,7 +10,7 @@ import {
 import { ClientApplication, Login, Project, ProjectMembership, Reference } from '@medplum/fhirtypes';
 import { NextFunction, Request, Response } from 'express';
 import { IncomingMessage } from 'http';
-import { AuthenticatedRequestContext, getRequestContext } from '../context';
+import { AuthenticatedRequestContext, getRequestContext } from '../../utils/context';
 import { getRepoForLogin } from '../fhir/accesspolicy';
 import { getSystemRepo } from '../fhir/repo';
 import { getClientApplicationMembership, getLoginForAccessToken, timingSafeEqualStr } from './utils';

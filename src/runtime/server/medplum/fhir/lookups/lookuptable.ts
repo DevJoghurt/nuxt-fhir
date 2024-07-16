@@ -1,6 +1,6 @@
 import { Operator as FhirOperator, Filter, SortRule, splitSearchOnComma } from '@medplum/core';
 import { Resource, ResourceType, SearchParameter } from '@medplum/fhirtypes';
-import { Pool, PoolClient } from 'pg';
+import type { Pool, PoolClient } from 'pg';
 import {
   Column,
   Condition,

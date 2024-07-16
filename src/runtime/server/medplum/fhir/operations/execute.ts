@@ -31,10 +31,13 @@ import {
   Reference,
   Subscription,
 } from '@medplum/fhirtypes';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { randomUUID } from 'node:crypto';
 import { Readable } from 'node:stream';
 import vm from 'node:vm';
+import fetch from 'node-fetch';
+import { asyncWrap } from '../../async';
+import { getConfig } from '../../../utils/config';
 import { buildTracingExtension, getAuthenticatedContext, getLogger } from '../../../utils/context';
 import { generateAccessToken } from '../../oauth/keys';
 import { recordHistogramValue } from '../../otel/otel';
@@ -46,8 +49,6 @@ import { getSystemRepo } from '../repo';
 import { sendResponse } from '../response';
 import { getBinaryStorage } from '../storage';
 import { sendAsyncResponse } from './utils/asyncjobexecutor';
-import type { H3Event, EventHandlerRequest } from 'h3';
-import { getHeader, setResponseHeader, setResponseStatus, send, readBody, getQuery, useRuntimeConfig, getRouterParams } from '#imports'
 
 export const EXECUTE_CONTENT_TYPES = [ContentType.JSON, ContentType.FHIR_JSON, ContentType.TEXT, ContentType.HL7_V2];
 
@@ -82,47 +83,41 @@ export interface BotExecutionResult {
  * Then executes the bot.
  * Returns the outcome of the bot execution.
  * Assumes that input content-type is output content-type.
- * 
- * @param event - The H3 event.
  */
-export const executeHandler = async (event: H3Event<EventHandlerRequest>) => {
-
-  if (getHeader(event, 'Prefer') === 'respond-async') {
-    await sendAsyncResponse(event, async () => {
-      const result = await executeOperation(event);
+export const executeHandler = asyncWrap(async (req: Request, res: Response) => {
+  if (req.header('Prefer') === 'respond-async') {
+    await sendAsyncResponse(req, res, async () => {
+      const result = await executeOperation(req);
       if (isOperationOutcome(result) && !isOk(result)) {
         throw new OperationOutcomeError(result);
       }
       return getOutParametersFromResult(result);
     });
   } else {
-    const result = await executeOperation(event);
+    const result = await executeOperation(req);
     if (isOperationOutcome(result)) {
-      return sendOutcome(event, result);
+      sendOutcome(res, result);
+      return;
     }
 
     const responseBody = getResponseBodyFromResult(result);
     const outcome = result.success ? allOk : badRequest(result.logResult);
 
     if (isResource(responseBody) && responseBody.resourceType === 'Binary') {
-      return await sendResponse(event, outcome, responseBody);
+      await sendResponse(req, res, outcome, responseBody);
+      return;
     }
-
-    const contentType = getHeader(event, 'Content-Type')
-
-    setResponseHeader(event, 'Content-Type', contentType)
-    setResponseStatus(event, getStatus(outcome))
 
     // Send the response
     // The body parameter can be a Buffer object, a String, an object, Boolean, or an Array.
-    return send(event, responseBody)
+    res.status(getStatus(outcome)).type(getResponseContentType(req)).send(responseBody);
   }
-};
+});
 
-async function executeOperation(event: H3Event<EventHandlerRequest>): Promise<OperationOutcome | BotExecutionResult> {
+async function executeOperation(req: Request): Promise<OperationOutcome | BotExecutionResult> {
   const ctx = getAuthenticatedContext();
   // First read the bot as the user to verify access
-  const userBot = await getBotForRequest(event);
+  const userBot = await getBotForRequest(req);
   if (!userBot) {
     return badRequest('Must specify bot ID or identifier.');
   }
@@ -145,12 +140,11 @@ async function executeOperation(event: H3Event<EventHandlerRequest>): Promise<Op
   // Execute the bot
   // If the request is HTTP POST, then the body is the input
   // If the request is HTTP GET, then the query string is the input
-  const body = await readBody(event);
   const result = await executeBot({
     bot,
     runAs,
-    input: event.method === 'POST' ? body : getQuery(event),
-    contentType: getHeader(event, 'Content-Type') as string,
+    input: req.method === 'POST' ? req.body : req.query,
+    contentType: req.header('content-type') as string,
   });
 
   return result;
@@ -161,19 +155,19 @@ async function executeOperation(event: H3Event<EventHandlerRequest>): Promise<Op
  * If using "/Bot/:id/$execute", then the bot ID is read from the path parameter.
  * If using "/Bot/$execute?identifier=...", then the bot is searched by identifier.
  * Otherwise, returns undefined.
- * @param event - The H3 event.
+ * @param req - The HTTP request.
  * @returns The bot, or undefined if not found.
  */
-async function getBotForRequest(event: H3Event<EventHandlerRequest>): Promise<Bot | undefined> {
+async function getBotForRequest(req: Request): Promise<Bot | undefined> {
   const ctx = getAuthenticatedContext();
   // Prefer to search by ID from path parameter
-  const { id } = getRouterParams(event);
+  const { id } = req.params;
   if (id) {
     return ctx.repo.readResource<Bot>('Bot', id);
   }
 
   // Otherwise, search by identifier
-  const { identifier } = getQuery(event);
+  const { identifier } = req.query;
   if (identifier && typeof identifier === 'string') {
     return ctx.repo.searchOne<Bot>({
       resourceType: 'Bot',
@@ -196,7 +190,7 @@ export async function executeBot(request: BotExecutionRequest): Promise<BotExecu
   const { bot, runAs } = request;
   const startTime = request.requestTime ?? new Date().toISOString();
 
-  let result = {} as BotExecutionResult;
+  let result: BotExecutionResult;
 
   const execStart = process.hrtime.bigint();
   if (!(await isBotEnabled(bot))) {
@@ -210,10 +204,7 @@ export async function executeBot(request: BotExecutionRequest): Promise<BotExecu
       secrets: await getBotSecrets(bot),
     };
 
-    // TODO find new runtime context
-    if (bot.runtimeVersion === 'awslambda') {
-      // NO AWS lamda support
-    } else if (bot.runtimeVersion === 'vmcontext') {
+    if (bot.runtimeVersion === 'vmcontext') {
       result = await runInVmContext(context);
     } else {
       result = { success: false, logResult: 'Unsupported bot runtime' };
@@ -365,7 +356,7 @@ async function writeBotInputToStorage(request: BotExecutionRequest): Promise<voi
 async function runInVmContext(request: BotExecutionContext): Promise<BotExecutionResult> {
   const { bot, input, contentType, traceId } = request;
 
-  const config = useRuntimeConfig().fhir;
+  const config = getConfig();
   if (!config.vmContextBotsEnabled) {
     return { success: false, logResult: 'VM Context bots not enabled on this server' };
   }
@@ -389,7 +380,7 @@ async function runInVmContext(request: BotExecutionContext): Promise<BotExecutio
     ContentType,
     Hl7Message,
     MedplumClient,
-    fetch: globalThis.$fetch,
+    fetch,
     console: botConsole,
     event: {
       bot: createReference(bot),
@@ -563,7 +554,7 @@ async function createAuditEvent(
     extension: buildTracingExtension(),
   };
 
-  const config = useRuntimeConfig().fhir;
+  const config = getConfig();
   const destination = bot.auditEventDestination ?? ['resource'];
   if (destination.includes('resource')) {
     const systemRepo = getSystemRepo();

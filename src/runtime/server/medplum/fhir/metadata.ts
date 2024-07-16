@@ -1,12 +1,4 @@
-//cc https://github.com/medplum/medplum/blob/main/packages/server/src/fhir/metadata.ts
-
-import { 
-    ContentType, 
-    getAllDataTypes, 
-    getSearchParameters, 
-    InternalTypeSchema, 
-    isResourceType 
-} from '@medplum/core';
+import { ContentType, getAllDataTypes, getSearchParameters, InternalTypeSchema, isResourceType } from '@medplum/core';
 import {
   CapabilityStatement,
   CapabilityStatementRest,
@@ -16,31 +8,33 @@ import {
   CapabilityStatementRestSecurity,
   ResourceType,
 } from '@medplum/fhirtypes';
+import { getConfig } from '../../utils/config';
+import { RuntimeConfig } from 'nuxt/schema'
 
 /**
  * The base CapabilityStatement that seeds the server generated statement.
  */
 const baseStmt: CapabilityStatement = {
   resourceType: 'CapabilityStatement',
-  id: 'nuxt-fhir-server',
+  id: 'medplum-server',
   url: 'http://hl7.org/fhir/us/core/CapabilityStatement/us-core-server',
   version: '0.9.34',
-  name: 'CapabilityStatement',
-  title: 'Capability Statement',
+  name: 'MedplumCapabilityStatement',
+  title: 'Medplum Capability Statement',
   status: 'active',
   date: '2022-09-02',
-  publisher: '',
+  publisher: 'Medplum',
   contact: [
     {
       telecom: [
         {
           system: 'url',
-          value: '',
+          value: 'https://www.medplum.com',
         },
       ],
     },
   ],
-  description: 'FHIR Capability Statement',
+  description: 'Medplum FHIR Capability Statement',
   jurisdiction: [
     {
       coding: [
@@ -154,16 +148,18 @@ const supportedSearchParams: CapabilityStatementRestResourceSearchParam[] = [
 
 let capabilityStatement: CapabilityStatement | undefined = undefined;
 
-export function getCapabilityStatement(baseUrl: string): CapabilityStatement {
+export function getCapabilityStatement(): CapabilityStatement {
   if (!capabilityStatement) {
-    capabilityStatement = buildCapabilityStatement(baseUrl);
+    capabilityStatement = buildCapabilityStatement();
   }
   return capabilityStatement;
 }
 
-function buildCapabilityStatement(baseUrl: string): CapabilityStatement {
-  const name = 'nuxt-fhir';
+function buildCapabilityStatement(): CapabilityStatement {
+  const name = 'medplum';
   const version = baseStmt.version;
+  const config = getConfig();
+  const baseUrl = config.baseUrl;
   const fhirBaseUrl = baseUrl + 'fhir/R4/';
   const metadataUrl = fhirBaseUrl + 'metadata';
 
@@ -178,15 +174,15 @@ function buildCapabilityStatement(baseUrl: string): CapabilityStatement {
       description: name,
       url: fhirBaseUrl,
     },
-    rest: buildRest(baseUrl),
+    rest: buildRest(config),
   };
 }
 
-function buildRest(baseUrl: string): CapabilityStatementRest[] {
+function buildRest(config: RuntimeConfig['fhir']): CapabilityStatementRest[] {
   return [
     {
       mode: 'server',
-      security: buildSecurity(baseUrl),
+      security: buildSecurity(config),
       resource: buildResourceTypes(),
       interaction: [{ code: 'transaction' }, { code: 'batch' }],
       searchParam: supportedSearchParams,
@@ -194,8 +190,7 @@ function buildRest(baseUrl: string): CapabilityStatementRest[] {
   ];
 }
 
-function buildSecurity(baseUrl: string): CapabilityStatementRestSecurity {
-
+function buildSecurity(config: RuntimeConfig['fhir']): CapabilityStatementRestSecurity {
   return {
     extension: [
       {
@@ -203,11 +198,11 @@ function buildSecurity(baseUrl: string): CapabilityStatementRestSecurity {
         extension: [
           {
             url: 'authorize',
-            valueUri: baseUrl + '/authorize',
+            valueUri: config.authorizeUrl,
           },
           {
             url: 'token',
-            valueUri: baseUrl + '/token',
+            valueUri: config.tokenUrl,
           },
         ],
       },

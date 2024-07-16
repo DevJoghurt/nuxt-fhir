@@ -1,4 +1,5 @@
 import { Pool, PoolClient } from 'pg';
+import pg from "pg";
 import { globalLogger } from '#imports';
 import * as migrations from '../migrations/schema';
 import { PostgresDatabase, PostgresServerConfig } from '../../../types';
@@ -7,6 +8,8 @@ export enum DatabaseMode {
   READER = 'reader',
   WRITER = 'writer',
 }
+
+const { Pool: PgPool } = pg;
 
 let pool: Pool | undefined;
 let readonlyPool: Pool | undefined;
@@ -58,7 +61,9 @@ async function initPool(config: PostgresDatabase, proxyEndpoint: string | undefi
     poolConfig.ssl.require = true;
   }
 
-  const pool = new Pool(poolConfig);
+  console.log(poolConfig)
+
+  const pool = new PgPool(poolConfig);
 
   pool.on('error', (err) => {
     globalLogger.error('Database connection error', err);

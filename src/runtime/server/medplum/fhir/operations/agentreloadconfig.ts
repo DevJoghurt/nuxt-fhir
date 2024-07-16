@@ -1,6 +1,5 @@
 import { AgentReloadConfigResponse, OperationOutcomeError, badRequest, serverError } from '@medplum/core';
-import { H3Event, EventHandlerRequest } from 'h3';
-import { FhirResponse } from '@medplum/fhir-router';
+import { FhirRequest, FhirResponse } from '@medplum/fhir-router';
 import { Agent, OperationDefinition } from '@medplum/fhirtypes';
 import { handleBulkAgentOperation, publishAgentRequest } from './utils/agentutils';
 
@@ -25,11 +24,11 @@ export const operation: OperationDefinition = {
  *   [fhir base]/Agent/$reload-config
  *   [fhir base]/Agent/[id]/$reload-config
  *
- * @param event - The H3 event.
+ * @param req - The FHIR request.
  * @returns The FHIR response.
  */
-export async function agentReloadConfigHandler(event:  H3Event<EventHandlerRequest>): Promise<FhirResponse> {
-  return handleBulkAgentOperation(event, async (agent: Agent) => reloadConfig(agent));
+export async function agentReloadConfigHandler(req: FhirRequest): Promise<FhirResponse> {
+  return handleBulkAgentOperation(req, async (agent: Agent) => reloadConfig(agent));
 }
 
 async function reloadConfig(agent: Agent): Promise<FhirResponse> {

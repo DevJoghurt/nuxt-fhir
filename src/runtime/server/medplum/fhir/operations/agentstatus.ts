@@ -6,7 +6,6 @@ import { getAuthenticatedContext } from '../../../utils/context';
 import { getRedis } from '../../../utils/redis';
 import { getAgentForRequest } from './utils/agentutils';
 import { buildOutputParameters } from './utils/parameters';
-import { H3Event, EventHandlerRequest } from 'h3';
 
 const operation: OperationDefinition = {
   resourceType: 'OperationDefinition',
@@ -32,14 +31,14 @@ const operation: OperationDefinition = {
  * Then tries to get the agent status from Redis.
  * Returns the agent status details as a Parameters resource.
  *
- * @param event - The H3 event.
+ * @param req - The FHIR request.
  * @returns The FHIR response.
  */
-export async function agentStatusHandler(event: H3Event<EventHandlerRequest>): Promise<FhirResponse> {
+export async function agentStatusHandler(req: FhirRequest): Promise<FhirResponse> {
   const { repo } = getAuthenticatedContext();
 
   // Read the agent as the user to verify access
-  const agent = await getAgentForRequest(event, repo);
+  const agent = await getAgentForRequest(req, repo);
   if (!agent) {
     return [badRequest('Must specify agent ID or identifier')];
   }

@@ -1,7 +1,7 @@
 import { OperationOutcomeError, allOk, badRequest, normalizeOperationOutcome } from '@medplum/core';
 import { FhirRequest, FhirResponse } from '@medplum/fhir-router';
 import { CodeSystem, Coding, OperationDefinition } from '@medplum/fhirtypes';
-import { PoolClient } from 'pg';
+import type { PoolClient } from 'pg';
 import { requireSuperAdmin } from '../../admin/super';
 import { getAuthenticatedContext } from '../../../utils/context';
 import { InsertQuery, SelectQuery } from '../sql';

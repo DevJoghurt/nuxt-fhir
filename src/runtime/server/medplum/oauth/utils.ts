@@ -29,7 +29,7 @@ import { JWTPayload, jwtVerify, VerifyOptions } from 'jose';
 import fetch from 'node-fetch';
 import { timingSafeEqual } from 'node:crypto';
 import { authenticator } from 'otplib';
-import { getRequestContext } from '../context';
+import { getRequestContext } from '../../utils/context';
 import { getAccessPolicyForLogin } from '../fhir/accesspolicy';
 import { getSystemRepo } from '../fhir/repo';
 import { AuditEventOutcome, logAuthEvent, LoginEvent } from '../util/auditevent';
@@ -746,7 +746,6 @@ export async function getExternalUserInfo(
     ctx.logger.warn('Error while verifying external auth code', err);
     throw new OperationOutcomeError(badRequest('Failed to verify code - check your identity provider configuration'));
   }
-
   if (response.status === 429) {
     ctx.logger.warn('Auth rate limit exceeded', { url: idp.userInfoUrl, clientId: idp.clientId });
     throw new OperationOutcomeError(tooManyRequests);

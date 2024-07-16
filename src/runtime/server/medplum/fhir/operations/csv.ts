@@ -20,27 +20,28 @@ import {
 import { Request, Response } from 'express';
 import { getAuthenticatedContext } from '../../../utils/context';
 import { sendOutcome } from '../outcomes';
-import type { H3Event, EventHandlerRequest } from 'h3';
-import { getRouterParams, getQuery, setResponseHeader, send, setResponseStatus } from '#imports'
 
 /**
  * Handles a CSV export request.
- * @param event - The H3 event.
+ * @param req - The HTTP request.
+ * @param res - The HTTP response.
  */
-export async function csvHandler(event: H3Event<EventHandlerRequest>): Promise<void> {
+export async function csvHandler(req: Request, res: Response): Promise<void> {
   const ctx = getAuthenticatedContext();
-  const { resourceType } = getRouterParams(event) as { resourceType: ResourceType };
-  const query = getQuery(event) as Record<string, string[] | string | undefined>;
+  const { resourceType } = req.params as { resourceType: ResourceType };
+  const query = req.query as Record<string, string[] | string | undefined>;
 
   const fields = query['_fields'] as string;
   delete query['_fields'];
 
   if (!fields) {
-    return sendOutcome(event, badRequest('Missing _fields parameter'));
+    sendOutcome(res, badRequest('Missing _fields parameter'));
+    return;
   }
 
   if (!isResourceType(resourceType)) {
-    return sendOutcome(event, badRequest('Unsupported resource type'));
+    sendOutcome(res, badRequest('Unsupported resource type'));
+    return;
   }
 
   const columnNames: string[] = [];
@@ -87,10 +88,7 @@ export async function csvHandler(event: H3Event<EventHandlerRequest>): Promise<v
 
   // Respond with the CSV content
   // Use Content-Disposition to force file download
-  setResponseHeader(event, 'Content-Type', 'text/csv')
-  setResponseHeader(event, 'Content-Disposition', 'attachment; filename=export.csv')
-  
-  return send(event, content)
+  res.type('text/csv').set('Content-Disposition', 'attachment; filename=export.csv').send(content);
 }
 
 function tryEvalFhirPath(expression: string, resource: Resource): unknown[] {

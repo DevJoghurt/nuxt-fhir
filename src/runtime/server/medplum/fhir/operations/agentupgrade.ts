@@ -1,9 +1,7 @@
 import { AgentUpgradeResponse, OperationOutcomeError, badRequest, serverError } from '@medplum/core';
-import { FhirResponse } from '@medplum/fhir-router';
+import { FhirRequest, FhirResponse } from '@medplum/fhir-router';
 import { Agent, OperationDefinition } from '@medplum/fhirtypes';
 import { handleBulkAgentOperation, publishAgentRequest } from './utils/agentutils';
-import { H3Event, EventHandlerRequest } from 'h3';
-import { getQuery } from '#imports';
 
 const DEFAULT_UPGRADE_TIMEOUT = 45000;
 const MAX_UPGRADE_TIMEOUT = 56000;
@@ -26,11 +24,6 @@ export const operation: OperationDefinition = {
   ],
 };
 
-type AgentUpgradeHandlerQuery = {
-  version: string | undefined;
-  timeout: string | undefined;
-}
-
 /**
  * Handles HTTP requests for the Agent $upgrade operation.
  *
@@ -38,12 +31,12 @@ type AgentUpgradeHandlerQuery = {
  *   [fhir base]/Agent/$upgrade
  *   [fhir base]/Agent/[id]/$upgrade
  *
- * @param event - The H3 event.
+ * @param req - The FHIR request.
  * @returns The FHIR response.
  */
-export async function agentUpgradeHandler(event: H3Event<EventHandlerRequest>): Promise<FhirResponse> {
-
-  const { version, timeout: _timeout } = getQuery<AgentUpgradeHandlerQuery>(event);
+export async function agentUpgradeHandler(req: FhirRequest): Promise<FhirResponse> {
+  const { version, timeout: _timeout, ...rest } = req.query;
+  req.query = rest;
 
   let timeout: number | undefined;
   if (_timeout) {
@@ -55,7 +48,7 @@ export async function agentUpgradeHandler(event: H3Event<EventHandlerRequest>): 
     }
   }
 
-  return handleBulkAgentOperation(event, async (agent: Agent) => upgradeAgent(agent, { version, timeout }));
+  return handleBulkAgentOperation(req, async (agent: Agent) => upgradeAgent(agent, { version, timeout }));
 }
 
 export type AgentUpgradeOptions = {

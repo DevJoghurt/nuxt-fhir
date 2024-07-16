@@ -4,7 +4,7 @@
  */
 
 import { PoolClient } from 'pg';
-import { r4ProjectId } from '../../seed';
+import { r4ProjectId } from '../../medplum/seed';
 import { Project } from '@medplum/fhirtypes';
 
 export async function run(client: PoolClient): Promise<void> {

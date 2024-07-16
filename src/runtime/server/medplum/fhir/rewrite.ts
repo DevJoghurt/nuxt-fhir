@@ -1,7 +1,8 @@
 import { Binary, Resource } from '@medplum/fhirtypes';
-import { useRuntimeConfig } from '#imports';
+import { getConfig } from '../../utils/config';
 import { getLogger } from '../../utils/context';
 import { Repository } from './repo';
+import { getBinaryStorage } from './storage';
 
 /**
  * The target type of the attachment rewrite.
@@ -164,8 +165,7 @@ class Rewriter {
       return `Binary/${id}`;
     }
 
-    //currently no support for presigned urls
-    return `Binary/${id}`;
+    return getBinaryStorage().getPresignedUrl(binary);
   }
 }
 
@@ -182,7 +182,7 @@ class Rewriter {
  * @returns The normalized binary ID and version ID.
  */
 function normalizeBinaryUrl(url: string): { id?: string; versionId?: string } {
-    const config = useRuntimeConfig().fhir;
+  const config = getConfig();
   let refStr: string | undefined;
 
   if (url.startsWith(config.baseUrl + 'fhir/R4/Binary/')) {

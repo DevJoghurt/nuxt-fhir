@@ -7,13 +7,13 @@ import {
   serverError,
 } from '@medplum/core';
 import { OperationOutcome, Parameters } from '@medplum/fhirtypes';
-import type { H3Event, EventHandlerRequest } from 'h3';
+import { Request, Response } from 'express';
+import { asyncWrap } from '../../async';
 import { getAuthenticatedContext } from '../../../utils/context';
 import { sendOutcome } from '../outcomes';
 import { getAgentForRequest, getDevice, publishAgentRequest } from './utils/agentutils';
 import { sendAsyncResponse } from './utils/asyncjobexecutor';
 import { parseParameters } from './utils/parameters';
-import  { readBody, getHeader, setResponseHeader, send, setResponseStatus } from '#imports';
 
 export interface AgentPushParameters {
   body: string;
@@ -31,14 +31,11 @@ const MAX_WAIT_TIMEOUT = 55000;
  * First reads the agent and makes sure it is valid and the user has access to it.
  * Then pushes the message to the agent channel.
  * Returns the outcome of the agent execution.
- * 
- * @param event - The H3 event.
  */
-export const agentPushHandler = async (event: H3Event<EventHandlerRequest>) => {
-
-  if ( getHeader(event, 'Prefer') === 'respond-async') {
-    await sendAsyncResponse(event, async () => {
-      const [outcome, agentResponse] = await pushToAgent(event);
+export const agentPushHandler = asyncWrap(async (req: Request, res: Response) => {
+  if (req.header('Prefer') === 'respond-async') {
+    await sendAsyncResponse(req, res, async () => {
+      const [outcome, agentResponse] = await pushToAgent(req);
       return {
         resourceType: 'Parameters',
         parameter: [
@@ -48,31 +45,28 @@ export const agentPushHandler = async (event: H3Event<EventHandlerRequest>) => {
       } satisfies Parameters;
     });
   } else {
-    const [outcome, agentResponse] = await pushToAgent(event);
+    const [outcome, agentResponse] = await pushToAgent(req);
     if (!agentResponse) {
-      return sendOutcome(event, outcome);
+      sendOutcome(res, outcome);
+      return;
     }
-
-    setResponseHeader(event, "Content-Type", agentResponse.contentType);
-
-    setResponseStatus(event, agentResponse.statusCode ?? 200);
-  
-    return send(event, agentResponse.body);
+    res
+      .status(agentResponse.statusCode ?? 200)
+      .type(agentResponse.contentType)
+      .send(agentResponse.body);
   }
-};
+});
 
-async function pushToAgent(event: H3Event<EventHandlerRequest>): Promise<[OperationOutcome] | [OperationOutcome, AgentTransmitResponse]> {
+async function pushToAgent(req: Request): Promise<[OperationOutcome] | [OperationOutcome, AgentTransmitResponse]> {
   const { repo } = getAuthenticatedContext();
 
   // Read the agent as the user to verify access
-  const agent = await getAgentForRequest(event, repo);
+  const agent = await getAgentForRequest(req, repo);
   if (!agent) {
     return [badRequest('Must specify agent ID or identifier')];
   }
 
-  const body = await readBody(event)
-
-  const params = parseParameters<AgentPushParameters>(body);
+  const params = parseParameters<AgentPushParameters>(req.body);
 
   // TODO: Clean this up later by factoring out 'ping' into it's own operation
   if (agent.status === 'off' && params.contentType !== ContentType.PING) {

@@ -1,7 +1,8 @@
 import { 
   defineNuxtModule, 
   createResolver,
-  addServerScanDir
+  addServerScanDir,
+  addServerHandler
 } from '@nuxt/kit'
 import defu from 'defu'
 import type { ModuleOptions } from './types'
@@ -17,20 +18,20 @@ export default defineNuxtModule<ModuleOptions>({
     appBaseUrl: null,
     postgres: {
       database: {
-        host: '127.0.0.1',
+        host: 'localhost',
         port: 5432,
-        dbname: 'fhir',
-        username: '',
-        password: '',
+        dbname: 'medplum_test',
+        username: 'medplum_test_readonly',
+        password: 'medplum_test_readonly',
         max: 600,
-        runMigrations: true,
+        runMigrations: false,
         ssl: {
           required: true
         }
       },
     },
     redis: {
-      host: '127.0.0.1',
+      host: 'localhost',
       port: 6379
     },
     cookiePrefix: 'fhir',
@@ -75,7 +76,30 @@ export default defineNuxtModule<ModuleOptions>({
       saveAuditEvents: _options.saveAuditEvents,
       vmContextBotsEnabled: _options.vmContextBotsEnabled,
       maxBotLogLengthForLogs: _options.maxBotLogLengthForLogs,
-      maxBotLogLengthForResource: _options.maxBotLogLengthForResource
+      maxBotLogLengthForResource: _options.maxBotLogLengthForResource,
+      heartbeatEnabled: _options.heartbeatEnabled || false,
+      heartbeatMilliseconds: _options.heartbeatMilliseconds || 10 * 1000,
+      introspectionEnabled: _options.introspectionEnabled || false,
+      accurateCountThreshold: _options.accurateCountThreshold || 1000000,
+      chainedSearchWithReferenceTables: _options.chainedSearchWithReferenceTables || false,
+      signingKey: _options.signingKey || undefined,
+      signingKeyPassphrase: _options.signingKeyPassphrase || undefined,
+      logAuditEvents: _options.logAuditEvents || false,
+      auditEventLogGroup: _options.auditEventLogGroup || undefined,
+      defaultBotRuntimeVersion: _options.defaultBotRuntimeVersion || 'vmcontext',
+      smtp: _options.smtp || undefined,
+      approvedSenderEmails: _options.approvedSenderEmails || undefined,
+      supportEmail: _options.supportEmail || undefined,
+      allowedOrigins: _options.allowedOrigins || '*',
+      defaultRateLimit: _options.defaultRateLimit || 60000,
+      defaultAuthRateLimit: _options.defaultAuthRateLimit || 160,
+      logRequests: _options.logRequests || false,
+      maxJsonSize: _options.maxJsonSize || '1mb',
+    })
+
+    addServerHandler({
+      route: '/test/*',
+      handler: resolve('./runtime/server/handler/app.ts'),
     })
 
   },

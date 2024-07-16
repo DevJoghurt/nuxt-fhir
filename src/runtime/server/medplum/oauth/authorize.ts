@@ -1,13 +1,13 @@
 import { getDateProperty, Operator } from '@medplum/core';
 import { ClientApplication, Login } from '@medplum/fhirtypes';
+import { Request, Response } from 'express';
 import { URL } from 'url';
-import { useRuntimeConfig } from '#imports';
+import { asyncWrap } from '../async';
+import { getConfig } from '../../utils/config';
 import { getLogger } from '../../utils/context';
 import { getSystemRepo } from '../fhir/repo';
 import { MedplumIdTokenClaims, verifyJwt } from './keys';
 import { getClientApplication } from './utils';
-import type { H3Event, EventHandlerRequest } from 'h3'
-import  { sendRedirect, readBody, getQuery, createError, getCookie } from '#imports'
 
 /*
  * Handles the OAuth/OpenID Authorization Endpoint.
@@ -17,41 +17,26 @@ import  { sendRedirect, readBody, getQuery, createError, getCookie } from '#impo
 /**
  * HTTP GET handler for /oauth2/authorize endpoint.
  */
-export const authorizeGetHandler = async (event: H3Event<EventHandlerRequest>) => {
-  const validateResult = await validateAuthorizeRequest(event);
+export const authorizeGetHandler = asyncWrap(async (req: Request, res: Response) => {
+  const validateResult = await validateAuthorizeRequest(req, res, req.query);
   if (!validateResult) {
     return;
   }
 
-  return sendSuccessRedirect(event);
-};
+  sendSuccessRedirect(req, res, req.query);
+});
 
 /**
  * HTTP POST handler for /oauth2/authorize endpoint.
  */
-export const authorizePostHandler = async (event: H3Event<EventHandlerRequest>) => {
-  const validateResult = await validateAuthorizeRequest(event);
+export const authorizePostHandler = asyncWrap(async (req: Request, res: Response) => {
+  const validateResult = await validateAuthorizeRequest(req, res, req.body);
   if (!validateResult) {
     return;
   }
 
-  return sendSuccessRedirect(event);
-};
-
-type ValidationBody = {
-  client_id: string;
-  redirectUri: string;
-  redirect_uri: string;
-  state: string;
-  scope: string | undefined;
-  response_type: 'code';
-  request: string | undefined;
-  aud: string | undefined;
-  code_challenge: boolean;
-  code_challenge_method: string | undefined;
-  prompt: string | undefined;
-  nonce: string;
-}
+  sendSuccessRedirect(req, res, req.body);
+});
 
 /**
  * Validates the OAuth/OpenID Authorization Endpoint configuration.
@@ -63,26 +48,20 @@ type ValidationBody = {
  * @param params - The params (query string params for GET, form body params for POST).
  * @returns True on success; false on error.
  */
-async function validateAuthorizeRequest(event: H3Event<EventHandlerRequest>) {
-
-  const params = await readBody(event) as ValidationBody
+async function validateAuthorizeRequest(req: Request, res: Response, params: Record<string, any>): Promise<boolean> {
   // First validate the client and the redirect URI.
   // If these are invalid, then show an error page.
   let client = undefined;
   try {
     client = await getClientApplication(params.client_id as string);
   } catch (err) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Client not found',
-    })
+    res.status(400).send('Client not found');
+    return false;
   }
 
   if (client.redirectUri !== params.redirect_uri) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Incorrect redirect_ur',
-    })
+    res.status(400).send('Incorrect redirect_uri');
+    return false;
   }
 
   const state = params.state as string;
@@ -91,37 +70,43 @@ async function validateAuthorizeRequest(event: H3Event<EventHandlerRequest>) {
   // If these are invalid, redirect back to the redirect URI.
   const scope = params.scope as string | undefined;
   if (!scope) {
-    return sendErrorRedirect(event, client.redirectUri as string, 'invalid_request', state);
+    sendErrorRedirect(res, client.redirectUri as string, 'invalid_request', state);
+    return false;
   }
 
   const responseType = params.response_type;
   if (responseType !== 'code') {
-    return sendErrorRedirect(event, client.redirectUri as string, 'unsupported_response_type', state);
+    sendErrorRedirect(res, client.redirectUri as string, 'unsupported_response_type', state);
+    return false;
   }
 
   const requestObject = params.request as string | undefined;
   if (requestObject) {
-    return sendErrorRedirect(event, client.redirectUri as string, 'request_not_supported', state);
+    sendErrorRedirect(res, client.redirectUri as string, 'request_not_supported', state);
+    return false;
   }
 
   const aud = params.aud as string | undefined;
   if (!isValidAudience(aud)) {
-    return sendErrorRedirect(event, client.redirectUri as string, 'invalid_request', state);
+    sendErrorRedirect(res, client.redirectUri as string, 'invalid_request', state);
+    return false;
   }
 
   const codeChallenge = params.code_challenge;
   if (codeChallenge) {
     const codeChallengeMethod = params.code_challenge_method;
     if (!codeChallengeMethod) {
-      return sendErrorRedirect(event, client.redirectUri as string, 'invalid_request', state);
+      sendErrorRedirect(res, client.redirectUri as string, 'invalid_request', state);
+      return false;
     }
   }
 
-  const existingLogin = await getExistingLogin(event, client);
+  const existingLogin = await getExistingLogin(req, client);
 
   const prompt = params.prompt as string | undefined;
   if (prompt === 'none' && !existingLogin) {
-    return sendErrorRedirect(event, client.redirectUri as string, 'login_required', state);
+    sendErrorRedirect(res, client.redirectUri as string, 'login_required', state);
+    return false;
   }
 
   if (prompt !== 'login' && existingLogin) {
@@ -135,7 +120,8 @@ async function validateAuthorizeRequest(event: H3Event<EventHandlerRequest>) {
     const redirectUrl = new URL(params.redirect_uri as string);
     redirectUrl.searchParams.append('code', existingLogin.code as string);
     redirectUrl.searchParams.append('state', state);
-    return sendRedirect(event, redirectUrl.toString());
+    res.redirect(redirectUrl.toString());
+    return false;
   }
 
   return true;
@@ -156,7 +142,7 @@ function isValidAudience(aud: string | undefined): boolean {
 
   try {
     const audUrl = new URL(aud);
-    const serverUrl = new URL(useRuntimeConfig().fhir.baseUrl);
+    const serverUrl = new URL(getConfig().baseUrl);
     return audUrl.protocol === serverUrl.protocol && audUrl.host === serverUrl.host;
   } catch (err) {
     return false;
@@ -165,13 +151,12 @@ function isValidAudience(aud: string | undefined): boolean {
 
 /**
  * Tries to get an existing login for the current request.
- * @param event - The H3 event.
+ * @param req - The HTTP request.
  * @param client - The current client application.
  * @returns Existing login if found; undefined otherwise.
  */
-async function getExistingLogin(event: H3Event<EventHandlerRequest>, client: ClientApplication): Promise<Login | undefined> {
-  const query = getQuery(event);
-  const login = (await getExistingLoginFromIdTokenHint(event)) || (await getExistingLoginFromCookie(event, client));
+async function getExistingLogin(req: Request, client: ClientApplication): Promise<Login | undefined> {
+  const login = (await getExistingLoginFromIdTokenHint(req)) || (await getExistingLoginFromCookie(req, client));
 
   if (!login) {
     return undefined;
@@ -179,7 +164,7 @@ async function getExistingLogin(event: H3Event<EventHandlerRequest>, client: Cli
 
   const authTime = getDateProperty(login.authTime) as Date;
   const age = (Date.now() - authTime.getTime()) / 1000;
-  const maxAge = query.max_age ? parseInt(query.max_age as string, 10) : 3600;
+  const maxAge = req.query.max_age ? parseInt(req.query.max_age as string, 10) : 3600;
   if (age > maxAge) {
     return undefined;
   }
@@ -189,12 +174,11 @@ async function getExistingLogin(event: H3Event<EventHandlerRequest>, client: Cli
 
 /**
  * Tries to get an existing login based on the "id_token_hint" query string parameter.
- * @param event - The H3 event.
+ * @param req - The HTTP request.
  * @returns Existing login if found; undefined otherwise.
  */
-async function getExistingLoginFromIdTokenHint(event: H3Event<EventHandlerRequest>): Promise<Login | undefined> {
-  const query = getQuery(event)
-  const idTokenHint = query.id_token_hint as string | undefined;
+async function getExistingLoginFromIdTokenHint(req: Request): Promise<Login | undefined> {
+  const idTokenHint = req.query.id_token_hint as string | undefined;
   if (!idTokenHint) {
     return undefined;
   }
@@ -219,13 +203,13 @@ async function getExistingLoginFromIdTokenHint(event: H3Event<EventHandlerReques
 
 /**
  * Tries to get an existing login based on the HTTP cookies.
- * @param event - The H3 event.
+ * @param req - The HTTP request.
  * @param client - The current client application.
  * @returns Existing login if found; undefined otherwise.
  */
-async function getExistingLoginFromCookie(event: H3Event<EventHandlerRequest>, client: ClientApplication): Promise<Login | undefined> {
+async function getExistingLoginFromCookie(req: Request, client: ClientApplication): Promise<Login | undefined> {
   const cookieName = 'medplum-' + client.id;
-  const cookieValue = getCookie(event, cookieName);
+  const cookieValue = req.cookies[cookieName];
   if (!cookieValue) {
     return undefined;
   }
@@ -253,22 +237,23 @@ async function getExistingLoginFromCookie(event: H3Event<EventHandlerRequest>, c
  * @param error - The OAuth/OpenID error code.
  * @param state - The client state.
  */
-function sendErrorRedirect(event: H3Event<EventHandlerRequest>, redirectUri: string, error: string, state: string) {
+function sendErrorRedirect(res: Response, redirectUri: string, error: string, state: string): void {
   const url = new URL(redirectUri);
   url.searchParams.append('error', error);
   url.searchParams.append('state', state);
-  return sendRedirect(event, url.toString());
+  res.redirect(url.toString());
 }
 
 /**
  * Sends a successful redirect.
- * @param event - The H3 event.
+ * @param req - The HTTP request.
+ * @param res - The HTTP response.
+ * @param params - The redirect parameters.
  */
-function sendSuccessRedirect(event: H3Event<EventHandlerRequest>) {
-  const params = readBody(event);
-  const redirectUrl = new URL(useRuntimeConfig().fhir.appBaseUrl + 'oauth');
+function sendSuccessRedirect(req: Request, res: Response, params: Record<string, any>): void {
+  const redirectUrl = new URL(getConfig().appBaseUrl + 'oauth');
   for (const [name, value] of Object.entries(params)) {
     redirectUrl.searchParams.set(name, value);
   }
-  return sendRedirect(event, redirectUrl.toString());
+  res.redirect(redirectUrl.toString());
 }

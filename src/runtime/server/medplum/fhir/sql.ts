@@ -1,6 +1,6 @@
 import { OperationOutcomeError, append, conflict } from '@medplum/core';
 import { Period } from '@medplum/fhirtypes';
-import { Client, Pool, PoolClient } from 'pg';
+import type { Client, Pool, PoolClient } from 'pg';
 import { env } from 'process';
 
 const DEBUG = env['SQL_DEBUG'];

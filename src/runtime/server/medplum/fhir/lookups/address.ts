@@ -1,6 +1,6 @@
 import { formatAddress } from '@medplum/core';
 import { Address, Resource, SearchParameter } from '@medplum/fhirtypes';
-import { PoolClient } from 'pg';
+import type { PoolClient } from 'pg';
 import { LookupTable } from './lookuptable';
 
 /**

@@ -1,12 +1,11 @@
 import { OperationOutcomeError, accepted } from '@medplum/core';
 import { AsyncJob, Parameters } from '@medplum/fhirtypes';
+import { Request, Response } from 'express';
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { useRuntimeConfig } from '#imports';
+import { getConfig } from '../../../../utils/config';
 import { getAuthenticatedContext, getRequestContext } from '../../../../utils/context';
 import { sendOutcome } from '../../outcomes';
 import { Repository, getSystemRepo } from '../../repo';
-import type { H3Event, EventHandlerRequest } from 'h3';
-import { getRequestProtocol, getRequestHost } from '#imports';
 
 export class AsyncJobExecutor {
   readonly repo: Repository;
@@ -120,14 +119,14 @@ export class AsyncJobExecutor {
 }
 
 export async function sendAsyncResponse(
-  event: H3Event<EventHandlerRequest>,
+  req: Request,
+  res: Response,
   callback: ((job: AsyncJob) => Promise<Parameters>) | ((job: AsyncJob) => Promise<void>)
 ): Promise<void> {
   const ctx = getAuthenticatedContext();
-  const { baseUrl } = useRuntimeConfig().fhir;
+  const { baseUrl } = getConfig();
   const exec = new AsyncJobExecutor(ctx.repo);
-
-  await exec.init(getRequestProtocol(event) + '://' + getRequestHost(event) + event.node.req.originalUrl);
+  await exec.init(req.protocol + '://' + req.get('host') + req.originalUrl);
   exec.start(callback);
-  sendOutcome(event, accepted(exec.getContentLocation(baseUrl)));
+  sendOutcome(res, accepted(exec.getContentLocation(baseUrl)));
 }

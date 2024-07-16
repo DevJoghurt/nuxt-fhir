@@ -28,6 +28,13 @@ export type RedisConfig = {
     tls?: Record<string, unknown>;
 }
 
+export type SmtpConfig = {
+    host: string,
+    port: number,
+    username: string,
+    password: string
+}
+
 // Module options TypeScript interface definition
 export interface ModuleOptions {
     //The fully qualified base URL of the API server including a trailing slash. For example, https://api.example.com/.
@@ -65,4 +72,40 @@ export interface ModuleOptions {
     maxBotLogLengthForResource?: number;
     //Optional max AuditEvent.outcomeDesc length for Bot events sent to logger.
     maxBotLogLengthForLogs?: number;
+    //Optional enable heartbeat timers for WebSocket connections.
+    heartbeatEnabled?: boolean;
+    //Optional interval for heartbeat -> default 10 * 1000.
+    heartbeatMilliseconds?: number;
+    //Optional enable introspection for GraphQL.
+    introspectionEnabled?: boolean;
+    //If the estimate is less than the "accurateCountThreshold" config setting (default 1,000,000), then we run an accurate count.
+    accurateCountThreshold?: number;
+    // Temporary feature flag, to be removed
+    chainedSearchWithReferenceTables?: boolean;
+    // File storage presigned URL signing key
+    signingKey?: string;
+    // File storage presigned URL signing key passphrase
+    signingKeyPassphrase?: string;
+    // Optional flag to log AuditEvent resources for all auth and RESTful operations to the logger.
+    logAuditEvents?: boolean;
+    //Optional Log Group name for AuditEvent logs. If not specified, AuditEvent logs use the default logger.
+    auditEventLogGroup?: string;
+    //Optional default bot runtime version. See Bot runtime version for more details.
+    defaultBotRuntimeVersion?: 'vmcontext' | undefined;
+    //Optional SMTP email settings to use SMTP for email. See Sending SMTP Emails for more details.
+    smtp?: SmtpConfig;
+    // Optional list of approved sender email addresses. If specified, only these email addresses can be used as the "from" address in emails, e.g ",".
+    approvedSenderEmails?: string;
+    // Optional support email address. If specified, this email address is used as the "from" address in emails when the user does not specify a "from" address.
+    supportEmail?: string;
+    //Optional comma separated list of allowed origins for Cross-Origin Resource Sharing (CORS) requests. appBaseUrl is included automatically.
+    allowedOrigins?: string;
+    // Optional rate limit for all requests. Set to -1 to disable rate limiting.
+    defaultRateLimit?: number;
+    // Optional rate limit for auth requests. Set to -1 to disable rate limiting.
+    defaultAuthRateLimit?: number;
+    // Optional flag to log requests to the logger.
+    logRequests?: boolean;
+    //Maximum JSON size for API calls. String is parsed with the bytes library. Default is 1mb.
+    maxJsonSize?: string;
   }

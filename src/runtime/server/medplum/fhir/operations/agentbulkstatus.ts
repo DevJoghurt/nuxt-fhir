@@ -1,9 +1,7 @@
-import { FhirResponse } from '@medplum/fhir-router';
+import { FhirRequest, FhirResponse } from '@medplum/fhir-router';
 import { Agent, OperationDefinition } from '@medplum/fhirtypes';
 import { agentStatusHandler } from './agentstatus';
 import { handleBulkAgentOperation } from './utils/agentutils';
-import type { H3Event, EventHandlerRequest } from 'h3';
-
 
 export const operation: OperationDefinition = {
   resourceType: 'OperationDefinition',
@@ -28,15 +26,11 @@ export const operation: OperationDefinition = {
  * Endpoint
  *   [fhir base]/Agent/$bulk-status
  *
- * @param event - The H3 event.
+ * @param req - The FHIR request.
  * @returns The FHIR response.
  */
-export async function agentBulkStatusHandler(event: H3Event<EventHandlerRequest>): Promise<FhirResponse> {
-  return handleBulkAgentOperation(event, (agent: Agent) => {
-    // Overwrite params
-    event.context.params = Object.assign({
-      id: agent.id as string
-    },event.context.params)
-    return agentStatusHandler(event)
-  });
+export async function agentBulkStatusHandler(req: FhirRequest): Promise<FhirResponse> {
+  return handleBulkAgentOperation(req, (agent: Agent) =>
+    agentStatusHandler({ ...req, params: { id: agent.id as string } })
+  );
 }
