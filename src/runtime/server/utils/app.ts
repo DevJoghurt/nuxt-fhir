@@ -1,13 +1,25 @@
-import { defineExpressHandler, getConfig, attachRequestContext, getRateLimiter, getRequestContext, AuthenticatedRequestContext, closeRequestContext, getLogger } from "#imports"
+import { 
+	getConfig, 
+	closeRequestContext, 
+	getLogger,
+	getRequestContext,
+	AuthenticatedRequestContext,
+	attachRequestContext,
+	getRateLimiter,
+  initRedis,
+  fromNodeMiddleware
+} from '#imports';
+import express, { RequestHandler } from 'express';
+import { Express, NextFunction, Request, Response,text, urlencoded, json  } from 'express';
+import { sendOutcome } from '../medplum/fhir/outcomes';
+import type { OperationOutcome } from '@medplum/fhirtypes';
 import { badRequest, ContentType } from '@medplum/core';
-import { Express, json, NextFunction, Request, Response, Router, text, urlencoded } from 'express';
 import cors from 'cors';
 import compression from 'compression';
 import { corsOptions } from "../medplum/cors";
-import { binaryRouter } from '../medplum/fhir/binary';
 import { hl7BodyParser } from '../medplum/hl7/parser';
-import { sendOutcome } from '../medplum/fhir/outcomes';
-import { OperationOutcome } from '@medplum/fhirtypes';
+import { authenticateRequest } from '../medplum/oauth/middleware';
+
 
 /**
  * Sets standard headers for all requests.
@@ -16,6 +28,7 @@ import { OperationOutcome } from '@medplum/fhirtypes';
  * @param next - The next handler.
  */
 function standardHeaders(_req: Request, res: Response, next: NextFunction): void {
+  
     // Disables all caching
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.set('Pragma', 'no-cache');
@@ -52,7 +65,7 @@ function standardHeaders(_req: Request, res: Response, next: NextFunction): void
     // Block pages from loading when they detect reflected XSS attacks
     res.set('X-XSS-Protection', '1; mode=block');
     next();
-  }
+}
 
   /**
  * Global error handler.
@@ -62,7 +75,7 @@ function standardHeaders(_req: Request, res: Response, next: NextFunction): void
  * @param res - The response.
  * @param next - The next handler.
  */
-function errorHandler(err: any, req: Request, res: Response, next: NextFunction): void {
+  function errorHandler(err: any, req: Request, res: Response, next: NextFunction): void {
     closeRequestContext();
     if (res.headersSent) {
       next(err);
@@ -122,50 +135,94 @@ function errorHandler(err: any, req: Request, res: Response, next: NextFunction)
     next();
   };
 
-  const medplumRouter = () => {
-    const app = Router();
+  // OperationOutcome interceptor
+const fihrOOInterceptor = ((req: Request, res: Response, next: NextFunction) => {
+  const oldJson = res.json;
 
-    const config = getConfig();
+  res.json = (data: any) => {
+    // Restore the original json to avoid double response
+    // See: https://stackoverflow.com/a/60817116
+    res.json = oldJson;
 
-    //app.set('etag', false);
-    //app.set('trust proxy', 1);
-    //app.set('x-powered-by', false);
-    app.use(standardHeaders);
-    app.use(cors(corsOptions));
-    app.use(compression());
-    app.use(attachRequestContext);
-    app.use(getRateLimiter(config));
-    app.use('/fhir/R4/Binary', binaryRouter);
+    // FHIR "Prefer" header preferences
+    // See: https://www.hl7.org/fhir/http.html#ops
+    // Prefer: return=minimal
+    // Prefer: return=representation
+    // Prefer: return=OperationOutcome
+    const prefer = req.get('Prefer');
+    if (prefer === 'return=minimal') {
+      return res.send();
+    }
 
-    app.use(
-        urlencoded({
-          extended: false,
-        })
-      );
-      app.use(
-        text({
-          type: [ContentType.TEXT, ContentType.HL7_V2],
-        })
-      );
-      app.use(
-        json({
-          type: [ContentType.JSON, ContentType.FHIR_JSON, ContentType.JSON_PATCH, ContentType.SCIM_JSON],
-          limit: config.maxJsonSize,
-        })
-      );
-      app.use(
-        hl7BodyParser({
-          type: [ContentType.HL7_V2],
-        })
-      );
-    
-      if (config.logRequests) {
-        app.use(loggingMiddleware);
-      }
+    // Unless already set, use the FHIR content type
+    if (!res.get('Content-Type')) {
+      res.contentType(ContentType.FHIR_JSON);
+    }
 
-      app.get('/', (_req, res) => res.sendStatus(200));
-      app.use(errorHandler);
-      return app;
+    return res.json(data);
+  };
+  next();
+});
+
+export function getFhirApp () {    
+  const app = express();
+
+	const config = getConfig();
+
+  initRedis(config.redis);
+	
+	app.set('etag', false);
+  app.set('trust proxy', 1);
+  app.set('x-powered-by', false);
+  app.use(standardHeaders);
+  app.use(cors(corsOptions));
+  app.use(compression());
+  app.use(attachRequestContext);
+  app.use(getRateLimiter(config));
+
+  app.use(
+    urlencoded({
+      extended: false,
+    })
+  );
+  app.use(
+    text({
+      type: [ContentType.TEXT, ContentType.HL7_V2],
+    })
+  );
+  app.use(
+    json({
+      type: [ContentType.JSON, ContentType.FHIR_JSON, ContentType.JSON_PATCH, ContentType.SCIM_JSON],
+      limit: config.maxJsonSize,
+    })
+  );
+  app.use(
+    hl7BodyParser({
+      type: [ContentType.HL7_V2],
+    })
+  );
+
+  if (config.logRequests) {
+    app.use(loggingMiddleware);
   }
 
-export default defineExpressHandler(medplumRouter());
+  return app;
+}
+
+type FhirHandlerOptions = {
+  auth?: boolean;
+}
+
+// Check if initializing express app once is more performant with h3
+// Currently it is not global
+
+export function createFhirHandler(handler: RequestHandler, opts?: FhirHandlerOptions){
+  const app = getFhirApp();
+  app.use(fihrOOInterceptor);
+  if(opts?.auth){
+    app.use(authenticateRequest)
+  }
+	app.use(handler);
+	app.use(errorHandler);
+	return fromNodeMiddleware(app)
+}

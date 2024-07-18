@@ -1,13 +1,21 @@
-import { defineNitroPlugin } from 'nitropack/runtime'
-import { useRuntimeConfig, initDatabase, closeDatabase, initRedis, closeRedis, closeRateLimiter } from '#imports'
+import { 
+    defineNitroPlugin, 
+    useRuntimeConfig, 
+    initDatabase, 
+    closeDatabase, 
+    closeRedis, 
+    closeRateLimiter 
+} from '#imports'
+import { consola } from "consola"
 
 export default defineNitroPlugin(async (nitro) => {
+    const logger = consola.create({}).withTag("QUEUE")
+    logger.info('Nitro Plugin')
 
     const { postgres, redis } = useRuntimeConfig().fhir
 
     await initDatabase(postgres)
 
-    await initRedis(redis)
 
     nitro.hooks.hook("close", async () => {
         await closeDatabase()

@@ -1,6 +1,3 @@
-#Medplum dir
-medplumsrc
-
 # Dependencies
 node_modules
 
@@ -11,6 +8,8 @@ node_modules
 .temp
 .tmp
 .cache
+.local
+dump.rdb
 
 # Yarn
 **/.yarn/cache

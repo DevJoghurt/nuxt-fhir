@@ -4,12 +4,12 @@ export type PostgresDatabase = {
     host: string;
     port: number;
     dbname: string;
-    username: string;
-    password: string;
+    username?: string;
+    password?: string;
     max: number;
     runMigrations: boolean;
     queryTimeout?: number;
-    ssl: boolean | ConnectionOptions | undefined
+    ssl?: boolean | ConnectionOptions | undefined
 }
   
 export type PostgresServerConfig = {
@@ -37,6 +37,8 @@ export type SmtpConfig = {
 
 // Module options TypeScript interface definition
 export interface ModuleOptions {
+    //API prefix
+    prefix: string | null;
     //The fully qualified base URL of the API server including a trailing slash. For example, https://api.example.com/.
     baseUrl: string | null;
     postgres: PostgresServerConfig;
@@ -108,4 +110,6 @@ export interface ModuleOptions {
     logRequests?: boolean;
     //Maximum JSON size for API calls. String is parsed with the bytes library. Default is 1mb.
     maxJsonSize?: string;
+    // Allow user registration for FHIR server
+    registerEnabled?: boolean;
   }

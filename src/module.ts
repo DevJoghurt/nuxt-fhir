@@ -2,10 +2,13 @@ import {
   defineNuxtModule, 
   createResolver,
   addServerScanDir,
+  addServerImportsDir,
+  addServerPlugin,
   addServerHandler
 } from '@nuxt/kit'
 import defu from 'defu'
 import type { ModuleOptions } from './types'
+import { createFhirRoutes } from './handler/fhir'
 
 export default defineNuxtModule<ModuleOptions>({
   meta: {
@@ -14,20 +17,16 @@ export default defineNuxtModule<ModuleOptions>({
   },
   // Default configuration options of the Nuxt module
   defaults: {
+    prefix: null,
     baseUrl: null,
     appBaseUrl: null,
     postgres: {
       database: {
         host: 'localhost',
         port: 5432,
-        dbname: 'medplum_test',
-        username: 'medplum_test_readonly',
-        password: 'medplum_test_readonly',
+        dbname: 'medplum',
         max: 600,
-        runMigrations: false,
-        ssl: {
-          required: true
-        }
+        runMigrations: true
       },
     },
     redis: {
@@ -36,13 +35,13 @@ export default defineNuxtModule<ModuleOptions>({
     },
     cookiePrefix: 'fhir',
     saveAuditEvents: false,
-    logLevel: 'INFO',
+    logLevel: 'DEBUG',
     vmContextBotsEnabled: true
   },
   setup(_options, _nuxt) {
     const { resolve } = createResolver(import.meta.url)
 
-    addServerScanDir(resolve('./runtime/server'))
+    _nuxt.options.build.transpile.push(resolve('./runtime/server'))
 
     // add runtime config
     
@@ -65,9 +64,9 @@ export default defineNuxtModule<ModuleOptions>({
       redis: _options.redis,
       logLevel: _options.logLevel,
       issuer: _options.issuer || baseUrl,
-      jwksUrl: _options.jwksUrl || `${baseUrl}/.well-known/jwks.json`,
-      authorizeUrl: _options.authorizeUrl || `${baseUrl}/oauth2/authorize`,
-      tokenUrl: _options.authorizeUrl || `${baseUrl}/oauth2/token`,
+      jwksUrl: _options.jwksUrl || `${baseUrl}.well-known/jwks.json`,
+      authorizeUrl: _options.authorizeUrl || `${baseUrl}oauth2/authorize`,
+      tokenUrl: _options.authorizeUrl || `${baseUrl}oauth2/token`,
       cookiePrefix: _options.cookiePrefix,
       recaptchaSiteKey: _options.recaptchaSiteKey || undefined,
       recaptchaSecretKey: _options.recaptchaSecretKey || undefined,
@@ -95,12 +94,25 @@ export default defineNuxtModule<ModuleOptions>({
       defaultAuthRateLimit: _options.defaultAuthRateLimit || 160,
       logRequests: _options.logRequests || false,
       maxJsonSize: _options.maxJsonSize || '1mb',
+      registerEnabled: _options.registerEnabled || false,
     })
 
-    addServerHandler({
-      route: '/test/*',
-      handler: resolve('./runtime/server/handler/app.ts'),
+    addServerImportsDir(resolve('./runtime/server/utils'))
+
+    addServerPlugin(resolve('./runtime/server/plugins/medplum'))
+
+    createFhirRoutes(_options.prefix,{
+      cwd: resolve('./runtime/server/routes/fhir')
     })
 
-  },
+    _nuxt.hook('nitro:config', (nitro) => {
+      const ignoredWarnings = ['THIS_IS_UNDEFINED', 'CIRCULAR_DEPENDENCY']
+      //@ts-ignore
+      nitro.rollupConfig.onwarn = function (warn){
+        if(ignoredWarnings.indexOf(warn?.code || '') === -1)
+          console.log(warn.message)
+      } 
+    })
+
+  }
 })

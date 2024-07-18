@@ -61,8 +61,6 @@ async function initPool(config: PostgresDatabase, proxyEndpoint: string | undefi
     poolConfig.ssl.require = true;
   }
 
-  console.log(poolConfig)
-
   const pool = new PgPool(poolConfig);
 
   pool.on('error', (err) => {

@@ -6,7 +6,7 @@ let redis: Redis | undefined = undefined;
 let redisSubscribers: Set<Redis> | undefined = undefined;
 
 export function initRedis(config: RedisConfig): void {
-  redis = new Redis(config);
+   if(!redis) redis = new Redis(config);
 }
 
 export async function closeRedis(): Promise<void> {
