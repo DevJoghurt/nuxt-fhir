@@ -1,5 +1,5 @@
 import { TypedEventTarget } from '@medplum/core';
-import { ModuleOptions } from '../../../types'
+import { RuntimeConfig } from 'nuxt/schema'
 
 export type HeartbeatEventMap = {
   heartbeat: { type: 'heartbeat' };
@@ -15,7 +15,7 @@ let heartbeatTimer: NodeJS.Timeout | undefined;
  * Initializes heartbeat timers for WebSocket connections.
  * @param config - Medplum server config.
  */
-export function initHeartbeat(config: ModuleOptions): void {
+export function initHeartbeat(config: RuntimeConfig['fhir']): void {
   if (!(config.heartbeatEnabled ?? true)) {
     return;
   }

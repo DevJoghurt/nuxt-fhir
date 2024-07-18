@@ -112,4 +112,6 @@ export interface ModuleOptions {
     maxJsonSize?: string;
     // Allow user registration for FHIR server
     registerEnabled?: boolean;
+
+    bcryptHashSalt?: number;
   }

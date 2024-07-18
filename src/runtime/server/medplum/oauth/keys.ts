@@ -13,7 +13,7 @@ import {
   KeyLike,
   SignJWT,
 } from 'jose';
-import { ModuleOptions } from '../../../../types';
+import type { RuntimeConfig } from 'nuxt/schema'
 import { getSystemRepo } from '../fhir/repo';
 import { globalLogger } from '../../utils/logger';
 
@@ -87,7 +87,7 @@ const jwks: { keys: JWK[] } = { keys: [] };
 let signingKey: KeyLike | undefined;
 let signingKeyId: string | undefined;
 
-export async function initKeys(config: ModuleOptions): Promise<void> {
+export async function initKeys(config: RuntimeConfig['fhir']): Promise<void> {
   issuer = undefined;
   signingKey = undefined;
   signingKeyId = undefined;

@@ -95,6 +95,7 @@ export default defineNuxtModule<ModuleOptions>({
       logRequests: _options.logRequests || false,
       maxJsonSize: _options.maxJsonSize || '1mb',
       registerEnabled: _options.registerEnabled || false,
+      bcryptHashSalt: _options.bcryptHashSalt || 10
     })
 
     addServerImportsDir(resolve('./runtime/server/utils'))

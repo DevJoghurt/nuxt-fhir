@@ -10,7 +10,7 @@ import {
   fromNodeMiddleware
 } from '#imports';
 import express, { RequestHandler } from 'express';
-import { Express, NextFunction, Request, Response,text, urlencoded, json  } from 'express';
+import { NextFunction, Request, Response,text, urlencoded, json  } from 'express';
 import { sendOutcome } from '../medplum/fhir/outcomes';
 import type { OperationOutcome } from '@medplum/fhirtypes';
 import { badRequest, ContentType } from '@medplum/core';
