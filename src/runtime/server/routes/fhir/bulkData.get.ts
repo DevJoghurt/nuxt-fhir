@@ -1,11 +1,11 @@
-import { createFhirHandler, getAuthenticatedContext } from '#imports';
+import { createMedplumHandler, getAuthenticatedContext } from '#imports';
 import { ContentType } from '@medplum/core';
 import type { Request, Response } from 'express'
 import { BulkDataExport } from '@medplum/fhirtypes';
 import { asyncWrap } from '../../medplum/async';
 import { rewriteAttachments, RewriteMode } from '../../medplum/fhir/rewrite';
 
-export default createFhirHandler(asyncWrap(async (req: Request, res: Response) => {
+export default createMedplumHandler(asyncWrap(async (req: Request, res: Response) => {
     const ctx = getAuthenticatedContext();
     const { id } = req.params;
     const bulkDataExport = await ctx.repo.readResource<BulkDataExport>('BulkDataExport', id);
@@ -23,6 +23,4 @@ export default createFhirHandler(asyncWrap(async (req: Request, res: Response) =
       error: bulkDataExport.error || [],
     });
     res.status(200).type(ContentType.JSON).json(json);
-  }), {
-    auth: true
-})
+  }))

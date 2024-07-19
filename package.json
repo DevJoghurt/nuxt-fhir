@@ -85,6 +85,7 @@
     "nuxt": "^3.12.3",
     "typescript": "latest",
     "vitest": "^2.0.3",
-    "vue-tsc": "^2.0.26"
+    "vue-tsc": "^2.0.26",
+    "openapi3-ts": "4.3.3"
   }
 }

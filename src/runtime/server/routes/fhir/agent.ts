@@ -1,6 +1,4 @@
-import { createFhirHandler } from '#imports';
+import { createMedplumHandler } from '#imports';
 import { agentPushHandler } from '../../medplum/fhir/operations/agentpush';
 
-export default createFhirHandler(agentPushHandler, {
-    auth: true
-})
+export default createMedplumHandler(agentPushHandler);

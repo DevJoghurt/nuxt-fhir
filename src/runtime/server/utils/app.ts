@@ -164,7 +164,7 @@ const fihrOOInterceptor = ((req: Request, res: Response, next: NextFunction) => 
   next();
 });
 
-export function getFhirApp () {    
+export function getApp () {    
   const app = express();
 
 	const config = getConfig();
@@ -209,17 +209,21 @@ export function getFhirApp () {
   return app;
 }
 
-type FhirHandlerOptions = {
+type HandlerOptions = {
   auth?: boolean;
+  fhirRequest?: boolean;
 }
 
 // Check if initializing express app once is more performant with h3
 // Currently it is not global
 
-export function createFhirHandler(handler: RequestHandler, opts?: FhirHandlerOptions){
-  const app = getFhirApp();
-  app.use(fihrOOInterceptor);
-  if(opts?.auth){
+export function createMedplumHandler(handler: RequestHandler, opts = {} as HandlerOptions){
+  const { auth = true, fhirRequest = true } = opts;
+  const app = getApp();
+  if(fhirRequest === true){
+    app.use(fihrOOInterceptor);
+  }
+  if(auth === true){
     app.use(authenticateRequest)
   }
 	app.use(handler);

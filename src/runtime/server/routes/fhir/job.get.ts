@@ -1,4 +1,4 @@
-import { createFhirHandler, getAuthenticatedContext } from '#imports';
+import { createMedplumHandler, getAuthenticatedContext } from '#imports';
 import { allOk } from '@medplum/core';
 import type { Request, Response } from 'express'
 import { AsyncJob } from '@medplum/fhirtypes';
@@ -7,7 +7,7 @@ import { sendResponse } from '../../medplum/fhir/response';
 
 const finalJobStatusCodes = ['completed', 'error'];
 
-export default createFhirHandler(asyncWrap(async (req: Request, res: Response) => {
+export default createMedplumHandler(asyncWrap(async (req: Request, res: Response) => {
     const ctx = getAuthenticatedContext();
     const { id } = req.params;
     const asyncJob = await ctx.repo.readResource<AsyncJob>('AsyncJob', id);

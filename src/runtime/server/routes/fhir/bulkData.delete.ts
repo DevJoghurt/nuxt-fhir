@@ -1,7 +1,5 @@
-import { createFhirHandler } from '#imports'
+import { createMedplumHandler } from '#imports'
 
-export default createFhirHandler((req, res)=>{
+export default createMedplumHandler((req, res)=>{
     res.sendStatus(202);
-}, {
-    auth: true
 })

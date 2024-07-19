@@ -1,6 +1,8 @@
-import { createFhirHandler } from '#imports'
+import { createMedplumHandler} from '#imports'
 import { 
     smartStylingHandler 
 } from '../../medplum/fhir/smart';
 
-export default createFhirHandler(smartStylingHandler);
+export default createMedplumHandler(smartStylingHandler, {
+    auth: false
+});

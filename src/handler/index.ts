@@ -1,13 +1,18 @@
 import { addServerHandler } from '@nuxt/kit'
 import { fhirRoutes } from './fhir'
 import { websocketRoutes } from './websocket'
+import { openapiRoutes } from './openapi'
 
 type Options = {
     cwd: string;
 }
 
 export function createServerHandler(prefix: string | null, opts: Options): void {
-      const routeDefs = [fhirRoutes, websocketRoutes]
+      const routeDefs = [
+        openapiRoutes,
+        fhirRoutes, 
+        websocketRoutes
+      ]
     
       for(const routeDef of routeDefs){
         if(prefix?.startsWith('/'))

@@ -1,4 +1,4 @@
-import { createFhirHandler } from '#imports';
+import { createMedplumHandler } from '#imports';
 import { allOk, isOk, OperationOutcomeError } from '@medplum/core';
 import { FhirRequest, FhirRouter, HttpMethod, RepositoryMode } from '@medplum/fhir-router';
 import { ResourceType } from '@medplum/fhirtypes';
@@ -200,7 +200,7 @@ function initInternalFhirRouter(): FhirRouter {
     return router;
 }
 
-export default createFhirHandler(asyncWrap(async (req: Request, res: Response) => {
+export default createMedplumHandler(asyncWrap(async (req: Request, res: Response) => {
     const ctx = getAuthenticatedContext();
 
     const request: FhirRequest = {
@@ -228,6 +228,4 @@ export default createFhirHandler(asyncWrap(async (req: Request, res: Response) =
     } else {
       await sendResponse(req, res, result[0], result[1]);
     }
-  }), {
-    auth: true
-})
+  }))
