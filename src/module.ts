@@ -8,7 +8,7 @@ import {
 } from '@nuxt/kit'
 import defu from 'defu'
 import type { ModuleOptions } from './types'
-import { createFhirRoutes } from './handler/fhir'
+import { createServerHandler } from './handler'
 
 export default defineNuxtModule<ModuleOptions>({
   meta: {
@@ -42,6 +42,7 @@ export default defineNuxtModule<ModuleOptions>({
     const { resolve } = createResolver(import.meta.url)
 
     _nuxt.options.build.transpile.push(resolve('./runtime/server'))
+
 
     // add runtime config
     
@@ -102,18 +103,26 @@ export default defineNuxtModule<ModuleOptions>({
 
     addServerPlugin(resolve('./runtime/server/plugins/medplum'))
 
-    createFhirRoutes(_options.prefix,{
-      cwd: resolve('./runtime/server/routes/fhir')
+    createServerHandler(_options.prefix,{
+      cwd: resolve('./runtime/server/routes')
     })
 
-    _nuxt.hook('nitro:config', (nitro) => {
-      const ignoredWarnings = ['THIS_IS_UNDEFINED', 'CIRCULAR_DEPENDENCY']
-      //@ts-ignore
-      nitro.rollupConfig.onwarn = function (warn){
-        if(ignoredWarnings.indexOf(warn?.code || '') === -1)
-          console.log(warn.message)
-      } 
-    })
+    // enable websocket
+    if(!_nuxt.options.nitro.experimental?.websocket)
+      _nuxt.options.nitro.experimental = {}
+    _nuxt.options.nitro.experimental.websocket = true
+
+    if(_nuxt.options.dev){
+      _nuxt.hook('nitro:config', (nitro) => {
+        const ignoredWarnings = ['THIS_IS_UNDEFINED', 'CIRCULAR_DEPENDENCY']
+        //@ts-ignore
+        nitro.rollupConfig.onwarn = function (warn){
+          if(ignoredWarnings.indexOf(warn?.code || '') === -1)
+            console.log(warn.message)
+        } 
+      })
+
+    }
 
   }
 })

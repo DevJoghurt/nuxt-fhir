@@ -1,19 +1,19 @@
 import type { ConnectionOptions } from 'pg';
 
 export type PostgresDatabase = {
-    host: string;
-    port: number;
-    dbname: string;
+    host?: string;
+    port?: number;
+    dbname?: string;
     username?: string;
     password?: string;
-    max: number;
-    runMigrations: boolean;
+    max?: number;
+    runMigrations?: boolean;
     queryTimeout?: number;
     ssl?: boolean | ConnectionOptions | undefined
 }
   
 export type PostgresServerConfig = {
-    database: PostgresDatabase;
+    database?: PostgresDatabase;
     readonlyDatabase?: PostgresDatabase;
     databaseProxyEndpoint?: string | undefined;
     readonlyDatabaseProxyEndpoint?: string | undefined;

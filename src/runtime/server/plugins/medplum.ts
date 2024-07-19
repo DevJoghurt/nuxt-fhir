@@ -13,17 +13,11 @@ import { loadStructureDefinitions } from '../medplum/fhir/structure';
 import { seedDatabase } from '../medplum/seed';
 import { initKeys } from '../medplum/oauth/keys';
 import { cleanupHeartbeat, initHeartbeat } from '../medplum/heartbeat';
-import { closeWebSockets, initWebSockets } from '../medplum/websockets';
 
 export default defineNitroPlugin(async (nitro) => {
-    const logger = consola.create({}).withTag("MEDPLUM")
+    const logger = consola.create({}).withTag("MEDPLUM");
 
-    const config = getConfig()
-
-    // TODO: add websocket https://github.com/nuxt-alt/websocket/blob/main/src/runtime/websocket-plugin.nitro.ts
-    nitro.hooks.hook('listen:node', () => {
-        console.log('listen')
-    })
+    const config = getConfig();
 
     await requestContextStore.run(AuthenticatedRequestContext.system(), async () => {
         loadStructureDefinitions();
