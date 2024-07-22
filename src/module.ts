@@ -2,7 +2,8 @@ import {
   defineNuxtModule, 
   createResolver,
   addServerImportsDir,
-  addServerPlugin
+  addServerPlugin,
+  addServerHandler
 } from '@nuxt/kit'
 import defu from 'defu'
 import type { ModuleOptions } from './types'
@@ -48,8 +49,7 @@ export default defineNuxtModule<ModuleOptions>({
   setup(_options, _nuxt) {
     const { resolve } = createResolver(import.meta.url)
 
-    _nuxt.options.build.transpile.push(resolve('./runtime/server'))
-
+    _nuxt.options.build.transpile.push("@medplum/app")
 
     // add runtime config
     
@@ -114,6 +114,24 @@ export default defineNuxtModule<ModuleOptions>({
 
     createServerHandler(_options.prefix,{
       cwd: resolve('./runtime/server/routes')
+    })
+
+    addServerHandler({
+      route: "/",
+      handler: resolve("./runtime/server/app/handler"),
+    })
+    addServerHandler({
+      route: "/signin",
+      handler: resolve("./runtime/server/app/handler"),
+    })
+    addServerHandler({
+      route: "/Project",
+      handler: resolve("./runtime/server/app/handler"),
+    })
+
+    addServerHandler({
+      route: "/app/**",
+      handler: resolve("./runtime/server/app/handler"),
     })
 
     // enable websocket

@@ -80,6 +80,9 @@ export const fhirRoutes: Route = {
     method: 'DELETE',
     file: 'job.delete'
   },{
+    path: '/',
+    file: 'fhir'
+  },{
     path: '/**',
     file: 'fhir'
   }]

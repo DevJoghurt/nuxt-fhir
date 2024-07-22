@@ -212,6 +212,7 @@ export default createMedplumHandler(asyncWrap(async (req: Request, res: Response
       headers: req.headers,
     };
 
+
     if (request.pathname.includes('$graphql')) {
       // If this is a GraphQL request, mark the repository as eligible for "reader" mode.
       // Inside the GraphQL handler, the repository will be set to "writer" mode if needed.
