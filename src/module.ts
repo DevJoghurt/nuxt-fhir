@@ -104,7 +104,8 @@ export default defineNuxtModule<ModuleOptions>({
       maxJsonSize: _options.maxJsonSize || '1mb',
       registerEnabled: _options.registerEnabled || false,
       bcryptHashSalt: _options.bcryptHashSalt || 10,
-      bullmq: _options.bullmq
+      bullmq: _options.bullmq,
+      googleClientId: _options.googleClientId || ''
     })
 
     addServerImportsDir(resolve('./runtime/server/utils'))

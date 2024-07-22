@@ -11,9 +11,8 @@ import { ClientApplication, IdentityProvider } from '@medplum/fhirtypes';
 import { randomUUID } from 'crypto';
 import { Request, Response } from 'express';
 import fetch from 'node-fetch';
-import { getConfig } from '../config';
+import { globalLogger, getConfig } from '#imports';
 import { sendOutcome } from '../fhir/outcomes';
-import { globalLogger } from '../logger';
 import { CodeChallengeMethod, getClientApplication, tryLogin } from '../oauth/utils';
 import { getDomainConfiguration } from './method';
 

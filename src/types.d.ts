@@ -126,5 +126,7 @@ export interface ModuleOptions {
 
     bcryptHashSalt?: number;
 
-    bullmq?: BullmqConfig
+    bullmq?: BullmqConfig;
+    //If using Google Authentication, this is the Google Client ID.
+    googleClientId?: string;
   }

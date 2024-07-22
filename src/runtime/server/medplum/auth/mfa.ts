@@ -54,6 +54,7 @@ mfaRouter.post(
   '/enroll',
   authenticateRequest,
   [body('token').notEmpty().withMessage('Missing token')],
+  
   asyncWrap(async (req: Request, res: Response) => {
     const systemRepo = getSystemRepo();
     const ctx = getAuthenticatedContext();
