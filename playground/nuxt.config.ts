@@ -3,7 +3,7 @@ export default defineNuxtConfig({
   fhir: {
     postgres: {
       database: {
-        username: 'postgres',
+        username: process.env.POSTGRES_USERNAME,
         password: process.env.POSTGRES_PASSWORD,
       }
     }

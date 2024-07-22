@@ -1,10 +1,8 @@
 import { 
   defineNuxtModule, 
   createResolver,
-  addServerScanDir,
   addServerImportsDir,
-  addServerPlugin,
-  addServerHandler
+  addServerPlugin
 } from '@nuxt/kit'
 import defu from 'defu'
 import type { ModuleOptions } from './types'
@@ -36,7 +34,16 @@ export default defineNuxtModule<ModuleOptions>({
     cookiePrefix: 'fhir',
     saveAuditEvents: false,
     logLevel: 'DEBUG',
-    vmContextBotsEnabled: true
+    vmContextBotsEnabled: true,
+    bullmq: {
+      concurrency: 10, 
+      removeOnComplete: { 
+        count: 1 
+      }, 
+      removeOnFail: { 
+        count: 1 
+      }
+    }
   },
   setup(_options, _nuxt) {
     const { resolve } = createResolver(import.meta.url)
@@ -96,7 +103,8 @@ export default defineNuxtModule<ModuleOptions>({
       logRequests: _options.logRequests || false,
       maxJsonSize: _options.maxJsonSize || '1mb',
       registerEnabled: _options.registerEnabled || false,
-      bcryptHashSalt: _options.bcryptHashSalt || 10
+      bcryptHashSalt: _options.bcryptHashSalt || 10,
+      bullmq: _options.bullmq
     })
 
     addServerImportsDir(resolve('./runtime/server/utils'))

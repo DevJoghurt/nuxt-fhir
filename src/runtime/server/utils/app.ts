@@ -18,7 +18,9 @@ import cors from 'cors';
 import compression from 'compression';
 import { corsOptions } from "../medplum/cors";
 import { hl7BodyParser } from '../medplum/hl7/parser';
+import { verifyProjectAdmin } from '../medplum/admin/utils'
 import { authenticateRequest } from '../medplum/oauth/middleware';
+import { ValidationChain } from 'express-validator';
 
 
 /**
@@ -212,19 +214,29 @@ export function getApp () {
 type HandlerOptions = {
   auth?: boolean;
   fhirRequest?: boolean;
+  admin?: boolean;
+  validation?: ValidationChain[] | RequestHandler[] | false
 }
 
 // Check if initializing express app once is more performant with h3
 // Currently it is not global
 
 export function createMedplumHandler(handler: RequestHandler, opts = {} as HandlerOptions){
-  const { auth = true, fhirRequest = true } = opts;
+  const { auth = true, fhirRequest = true, admin = false, validation = false } = opts;
   const app = getApp();
   if(fhirRequest === true){
     app.use(fihrOOInterceptor);
   }
-  if(auth === true){
+  if(auth === true || admin === true){
     app.use(authenticateRequest)
+  }
+  if(admin === true){
+    app.use(verifyProjectAdmin)
+  }
+  if(validation){
+    for(const val of validation){
+      app.use(val)
+    }
   }
 	app.use(handler);
 	app.use(errorHandler);

@@ -1,4 +1,15 @@
 import type { ConnectionOptions } from 'pg';
+import { KeepJobs } from 'bullmq';
+
+export interface BullmqConfig {
+    /**
+     * Amount of jobs that a single worker is allowed to work on in parallel.
+     * @see {@link https://docs.bullmq.io/guide/workers/concurrency}
+     */
+    concurrency?: number;
+    removeOnComplete: KeepJobs;
+    removeOnFail: KeepJobs;
+  }
 
 export type PostgresDatabase = {
     host?: string;
@@ -114,4 +125,6 @@ export interface ModuleOptions {
     registerEnabled?: boolean;
 
     bcryptHashSalt?: number;
+
+    bullmq?: BullmqConfig
   }

@@ -24,8 +24,8 @@ import { getUserByEmail } from '../oauth/utils';
 import { rebuildR4SearchParameters } from '../seeds/searchparameters';
 import { rebuildR4StructureDefinitions } from '../seeds/structuredefinitions';
 import { rebuildR4ValueSets } from '../seeds/valuesets';
-//import { removeBullMQJobByKey } from '../../workers/cron';
-//import { addReindexJob } from '../workers/reindex';
+import { removeBullMQJobByKey } from '../workers/cron';
+import { addReindexJob } from '../workers/reindex';
 
 export const superAdminRouter = Router();
 superAdminRouter.use(authenticateRequest);
@@ -87,7 +87,7 @@ superAdminRouter.post(
     const exec = new AsyncJobExecutor(systemRepo);
     await exec.init(`${req.protocol}://${req.get('host') + req.originalUrl}`);
     await exec.run(async (asyncJob) => {
-      //await addReindexJob(resourceTypes as ResourceType[], asyncJob);
+      await addReindexJob(resourceTypes as ResourceType[], asyncJob);
     });
 
     const { baseUrl } = getConfig();
@@ -159,7 +159,7 @@ superAdminRouter.post(
       return;
     }
 
-    //await removeBullMQJobByKey(req.body.botId);
+    await removeBullMQJobByKey(req.body.botId);
 
     sendOutcome(res, allOk);
   })

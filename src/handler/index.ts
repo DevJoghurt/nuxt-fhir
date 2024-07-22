@@ -2,6 +2,7 @@ import { addServerHandler } from '@nuxt/kit'
 import { fhirRoutes } from './fhir'
 import { websocketRoutes } from './websocket'
 import { openapiRoutes } from './openapi'
+import { adminRoutes } from './admin'
 
 type Options = {
     cwd: string;
@@ -9,8 +10,9 @@ type Options = {
 
 export function createServerHandler(prefix: string | null, opts: Options): void {
       const routeDefs = [
+        adminRoutes,
         openapiRoutes,
-        fhirRoutes, 
+        fhirRoutes,
         websocketRoutes
       ]
     
