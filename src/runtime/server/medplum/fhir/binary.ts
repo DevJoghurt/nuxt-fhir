@@ -29,7 +29,7 @@ binaryRouter.get(
   })
 );
 
-async function handleBinaryWriteRequest(req: Request, res: Response): Promise<void> {
+export async function handleBinaryWriteRequest(req: Request, res: Response): Promise<void> {
   const ctx = getAuthenticatedContext();
   const create = req.method === 'POST';
   const { id } = req.params;

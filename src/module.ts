@@ -2,12 +2,13 @@ import {
   defineNuxtModule, 
   createResolver,
   addServerImportsDir,
-  addServerPlugin,
-  addServerHandler
+  addServerPlugin
 } from '@nuxt/kit'
 import defu from 'defu'
 import type { ModuleOptions } from './types'
 import { createServerHandler } from './handler'
+import { mkdirSync, existsSync } from 'fs'
+import { join } from 'path'
 
 export default defineNuxtModule<ModuleOptions>({
   meta: {
@@ -63,7 +64,7 @@ export default defineNuxtModule<ModuleOptions>({
       appBaseUrl = appBaseUrl + '/'
     }
     let storageDomainName = _options.storageDomainName ? _options.storageDomainName : _nuxt.options.devServer.host
-    let storageBaseUrl = _options.storageBaseUrl ? _options.storageBaseUrl : _nuxt.options.devServer.url + '/binary/'
+    let storageBaseUrl = _options.storageBaseUrl ? _options.storageBaseUrl : _nuxt.options.devServer.url + '/storage/'
 
     _nuxt.options.runtimeConfig.fhir = defu(_nuxt.options.runtimeConfig.fhir || {}, {
       baseUrl,
@@ -105,8 +106,15 @@ export default defineNuxtModule<ModuleOptions>({
       registerEnabled: _options.registerEnabled || false,
       bcryptHashSalt: _options.bcryptHashSalt || 10,
       bullmq: _options.bullmq,
-      googleClientId: _options.googleClientId || ''
+      googleClientId: _options.googleClientId || '',
+      binaryStorage: _options.binaryStorage || 'file:' + join(_nuxt.options.srcDir, '.tmp-storage')
     })
+
+    // create tmp folder for binary storage
+    if (!existsSync(_nuxt.options.runtimeConfig.fhir.binaryStorage)){
+      mkdirSync(_nuxt.options.runtimeConfig.fhir.binaryStorage, { recursive: true });
+  }
+
 
     addServerImportsDir(resolve('./runtime/server/utils'))
 
@@ -114,24 +122,6 @@ export default defineNuxtModule<ModuleOptions>({
 
     createServerHandler(_options.prefix,{
       cwd: resolve('./runtime/server/routes')
-    })
-
-    addServerHandler({
-      route: "/",
-      handler: resolve("./runtime/server/app/handler"),
-    })
-    addServerHandler({
-      route: "/signin",
-      handler: resolve("./runtime/server/app/handler"),
-    })
-    addServerHandler({
-      route: "/Project",
-      handler: resolve("./runtime/server/app/handler"),
-    })
-
-    addServerHandler({
-      route: "/app/**",
-      handler: resolve("./runtime/server/app/handler"),
     })
 
     // enable websocket

@@ -4,7 +4,7 @@ export const websocketRoutes: Route = {
   routePrefix: '',
   folder: 'websockets',
   routes: [{
-    path: '/_ws/*',
+    path: '/ws/*',
     file: 'handler',
   }]
 }

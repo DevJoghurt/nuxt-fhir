@@ -3,7 +3,8 @@ import { createSign } from 'crypto';
 import { copyFileSync, createReadStream, createWriteStream, existsSync, mkdirSync } from 'fs';
 import { resolve, sep } from 'path';
 import { Readable, pipeline } from 'stream';
-import { getConfig } from '../../utils/config';
+import { getConfig } from '#imports';
+import { getSigningKey } from '../oauth/keys';
 
 /**
  * Binary input type.
@@ -136,6 +137,9 @@ class FileSystemStorage implements BinaryStorage {
       key: config.signingKey, 
       passphrase: config.signingKeyPassphrase 
     };
+    if(!config.signingKey || config.signingKey === ''){
+      privateKey.key = getSigningKey();
+    }
     const signature = createSign('sha256').update(result.toString()).sign(privateKey, 'base64');
     result.searchParams.set('Signature', signature);
 

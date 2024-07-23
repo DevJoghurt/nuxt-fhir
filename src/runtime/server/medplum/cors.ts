@@ -10,7 +10,7 @@ const exposedHeaders = ['Content-Location', 'ETag', 'Last-Modified', 'Location']
  * @param callback - The cors plugin callback.
  */
 export const corsOptions: cors.CorsOptionsDelegate<Request> = (req, callback) => {
-  const origin = req.header('Origin');
+  const origin = req.header('Origin') || req.headers.referer;
   const allow = isOriginAllowed(origin) && isPathAllowed(req.path);
   if (allow) {
     callback(null, { origin, credentials: true, exposedHeaders });

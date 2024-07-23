@@ -1,10 +1,12 @@
 # Dependencies
 node_modules
+*.code-workspace
 
 # Logs
 *.log*
 
 # Temp directories
+.tmp-storage
 .temp
 .tmp
 .cache

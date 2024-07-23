@@ -5,6 +5,8 @@ import { openapiRoutes } from './openapi'
 import { adminRoutes } from './admin'
 import { authRoutes } from './auth'
 import { oauthRoutes } from './oauth'
+import { binaryRoutes } from './binary'
+import { storageRoutes } from './storage'
 
 type Options = {
     cwd: string;
@@ -16,7 +18,9 @@ export function createServerHandler(prefix: string | null, opts: Options): void 
         authRoutes,
         oauthRoutes,
         openapiRoutes,
+        binaryRoutes,
         fhirRoutes,
+        storageRoutes,
         websocketRoutes
       ]
     

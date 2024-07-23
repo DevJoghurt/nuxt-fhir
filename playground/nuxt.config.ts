@@ -6,7 +6,8 @@ export default defineNuxtConfig({
         username: process.env.POSTGRES_USERNAME,
         password: process.env.POSTGRES_PASSWORD,
       }
-    }
+    },
+    allowedOrigins: 'http://localhost:3001'
   },
   devtools: { 
     enabled: true 

@@ -166,7 +166,27 @@ const fihrOOInterceptor = ((req: Request, res: Response, next: NextFunction) => 
   next();
 });
 
-export function getApp () {    
+
+type HandlerOptions = {
+  auth?: boolean;
+  fhirRequest?: boolean;
+  admin?: boolean;
+  validation?: ValidationChain[] | RequestHandler[] | false;
+  extendedHeaders?: boolean;
+}
+
+// Check if initializing express app once is more performant with h3
+// Currently it is not global
+
+export function createMedplumHandler(handler: RequestHandler, opts = {} as HandlerOptions){
+  const { 
+    auth = true, 
+    fhirRequest = true, 
+    admin = false, 
+    validation = false, 
+    extendedHeaders = true 
+  } = opts;
+
   const app = express();
 
 	const config = getConfig();
@@ -182,48 +202,36 @@ export function getApp () {
   app.use(attachRequestContext);
   app.use(getRateLimiter(config));
 
-  app.use(
-    urlencoded({
-      extended: false,
-    })
-  );
-  app.use(
-    text({
-      type: [ContentType.TEXT, ContentType.HL7_V2],
-    })
-  );
-  app.use(
-    json({
-      type: [ContentType.JSON, ContentType.FHIR_JSON, ContentType.JSON_PATCH, ContentType.SCIM_JSON],
-      limit: config.maxJsonSize,
-    })
-  );
-  app.use(
-    hl7BodyParser({
-      type: [ContentType.HL7_V2],
-    })
-  );
-
   if (config.logRequests) {
     app.use(loggingMiddleware);
   }
 
-  return app;
-}
-
-type HandlerOptions = {
-  auth?: boolean;
-  fhirRequest?: boolean;
-  admin?: boolean;
-  validation?: ValidationChain[] | RequestHandler[] | false
-}
-
-// Check if initializing express app once is more performant with h3
-// Currently it is not global
-
-export function createMedplumHandler(handler: RequestHandler, opts = {} as HandlerOptions){
-  const { auth = true, fhirRequest = true, admin = false, validation = false } = opts;
-  const app = getApp();
+  if(extendedHeaders){
+    app.use(
+      urlencoded({
+        extended: false,
+      })
+    );
+    app.use(
+      text({
+        type: [ContentType.TEXT, ContentType.HL7_V2],
+      })
+    );
+    app.use(
+      json({
+        type: [ContentType.JSON, ContentType.FHIR_JSON, ContentType.JSON_PATCH, ContentType.SCIM_JSON],
+        limit: config.maxJsonSize,
+      })
+    );
+    app.use(
+      hl7BodyParser({
+        type: [ContentType.HL7_V2],
+      })
+    );
+  }
+  if (config.logRequests) {
+    app.use(loggingMiddleware);
+  }
   if(fhirRequest === true){
     app.use(fihrOOInterceptor);
   }

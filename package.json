@@ -36,7 +36,6 @@
     "@medplum/core": "3.2.1",
     "@medplum/definitions": "3.2.1",
     "@medplum/fhir-router": "3.2.1",
-    "@medplum/app": "3.2.1",
     "ioredis": "5.4.1",
     "bcryptjs": "2.4.3",
     "jose": "5.6.3",

@@ -129,4 +129,6 @@ export interface ModuleOptions {
     bullmq?: BullmqConfig;
     //If using Google Authentication, this is the Google Client ID.
     googleClientId?: string;
+    // Local path of the storage directory for binary files. TODO: add support for Minio storage.
+    binaryStorage?: string;
   }
