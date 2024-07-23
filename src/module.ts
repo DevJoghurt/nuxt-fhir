@@ -112,7 +112,7 @@ export default defineNuxtModule<ModuleOptions>({
 
     // create tmp folder for binary storage
     if (!existsSync(_nuxt.options.runtimeConfig.fhir.binaryStorage)){
-      mkdirSync(_nuxt.options.runtimeConfig.fhir.binaryStorage, { recursive: true });
+      mkdirSync(join(_nuxt.options.srcDir, '.tmp-storage'), { recursive: true });
   }
 
 
