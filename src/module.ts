@@ -33,7 +33,7 @@ export default defineNuxtModule<ModuleOptions>({
       host: 'localhost',
       port: 6379
     },
-    cookiePrefix: 'fhir',
+    cookiePrefix: 'medplum',
     saveAuditEvents: false,
     logLevel: 'DEBUG',
     vmContextBotsEnabled: true,

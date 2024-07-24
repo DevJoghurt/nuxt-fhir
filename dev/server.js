@@ -5,7 +5,7 @@ import { join } from "pathe";
 
 export const app = createApp();
 
-const publicDir = './node_modules/@medplum/app/dist';
+const publicDir = './dev/app';
 
 const medplumServer = 'http://localhost:3000/'
 
@@ -13,22 +13,31 @@ app.use(
   defineEventHandler((event) => {
     return serveStatic(event, {
         getContents: async (id) => {
+            let stats = await stat(join(publicDir, id)).catch(() => {});
+            if (!stats || !stats.isFile()) {
+              id = 'index.html'
+            }
             let file = await readFile(join(publicDir, id));
             if (id.endsWith(".js")) {
-                // overwrite __MEDPLUM_BASE_URL__ with server url, __MEDPLUM_CLIENT_ID__ with empty string and __MEDPLUM_REGISTER_ENABLED__ with true
                 file = file.toString().replaceAll('__MEDPLUM_BASE_URL__', medplumServer);
-                file = file.replaceAll('__MEDPLUM_CLIENT_ID__', '');
-                file = file.replaceAll('__MEDPLUM_REGISTER_ENABLED__', 'true');
                 setResponseHeader(event, 'Content-Type', 'application/javascript');
+                return file;
             }
+            if (id.endsWith(".css")) {
+              setResponseHeader(event, 'Content-Type', 'text/css');
+              return file;
+            }
+            if(!file.toString()){
+              console.log('No File')
+            }
+            setResponseHeader(event, 'Content-Type', 'text/html');
             return file;
         },
       getMeta: async (id) => {
-        console.log(id);
-        const stats = await stat(join(publicDir, id)).catch(() => {});
+        let stats = await stat(join(publicDir, id)).catch(() => {});
 
         if (!stats || !stats.isFile()) {
-          return;
+          stats = await stat(join(publicDir, 'index.html')).catch(() => {});
         }
 
         return {
@@ -36,7 +45,8 @@ app.use(
           mtime: stats.mtimeMs,
         };
       },
-      indexNames: ["/index.html"]
+      indexNames: ["index.html"],
+
     });
   }),
 );
