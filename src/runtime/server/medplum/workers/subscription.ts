@@ -18,11 +18,11 @@ import {
     serverError,
     stringify,
   } from '@medplum/core';
-  import { globalLogger } from '../../utils/logger';
+  import { globalLogger } from '../logger';
   import { Repository, getSystemRepo } from '../fhir/repo';
   import { Bot, Project, ProjectMembership, Reference, Resource, ResourceType, Subscription } from '@medplum/fhirtypes';
-  import { getLogger, getRequestContext, tryGetRequestContext, tryRunInRequestContext } from '../../utils/context';
-  import { getRedis } from '../../utils/redis';
+  import { getLogger, getRequestContext, tryGetRequestContext, tryRunInRequestContext } from '../context';
+  import { getRedis } from '../redis';
   import { buildAccessPolicy } from '../fhir/accesspolicy';
   import { findProjectMembership, getPreviousResource } from './utils';
   import { Queue } from 'bullmq';

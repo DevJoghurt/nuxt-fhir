@@ -60,10 +60,10 @@ import { Readable } from 'node:stream';
 import type { Pool, PoolClient } from 'pg';
 import { Operation, applyPatch } from 'rfc6902';
 import validator from 'validator';
-import { getConfig } from '../../utils/config';
-import { getLogger, getRequestContext } from '../../utils/context';
-import { DatabaseMode, getDatabasePool } from '../../utils/database';
-import { getRedis } from '../../utils/redis';
+import { getConfig } from '../config';
+import { getLogger, getRequestContext } from '../context';
+import { DatabaseMode, getDatabasePool } from '../database';
+import { getRedis } from '../redis';
 import { r4ProjectId } from '../seed';
 import {
   AuditEventOutcome,

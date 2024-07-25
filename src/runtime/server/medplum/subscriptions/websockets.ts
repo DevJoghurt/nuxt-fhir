@@ -9,7 +9,8 @@ import { AdditionalWsBindingClaims } from '../fhir/operations/getwsbindingtoken'
 import { CacheEntry } from '../fhir/repo';
 import { getFullUrl } from '../fhir/response';
 import { heartbeat } from '../heartbeat';
-import { globalLogger, getRedis, getRedisSubscriber } from '#imports';
+import { getRedis, getRedisSubscriber } from '../redis';
+import { globalLogger } from '../logger';
 import { verifyJwt } from '../oauth/keys';
 import { setGauge } from '../otel/otel';
 

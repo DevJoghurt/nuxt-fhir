@@ -2,7 +2,7 @@ import { createMedplumHandler } from '#imports';
 import { asyncWrap } from '../../../medplum/async';
 import { requireSuperAdmin, requireAsync } from './utils';
 import { Request, Response } from 'express';
-import { DatabaseMode, getDatabasePool } from '#imports';
+import { DatabaseMode, getDatabasePool } from '../../../medplum/database';
 import { sendAsyncResponse } from '../../../medplum/fhir/operations/utils/asyncjobexecutor';
 import * as dataMigrations from '../../../migrations/data';
 import { getSystemRepo } from '../../../medplum/fhir/repo';

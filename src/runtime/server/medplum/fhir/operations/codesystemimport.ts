@@ -3,7 +3,7 @@ import { FhirRequest, FhirResponse } from '@medplum/fhir-router';
 import { CodeSystem, Coding, OperationDefinition } from '@medplum/fhirtypes';
 import type { PoolClient } from 'pg';
 import { requireSuperAdmin } from '../../admin/super';
-import { getAuthenticatedContext } from '../../../utils/context';
+import { getAuthenticatedContext } from '../../context';
 import { InsertQuery, SelectQuery } from '../sql';
 import { buildOutputParameters, parseInputParameters } from './utils/parameters';
 import { findTerminologyResource, parentProperty } from './utils/terminology';

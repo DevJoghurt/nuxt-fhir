@@ -6,7 +6,7 @@
 import { ContentType, deepClone, OAuthGrantType, OAuthTokenAuthMethod } from '@medplum/core';
 import { AccessPolicy, AccessPolicyResource } from '@medplum/fhirtypes';
 import { Request, Response } from 'express';
-import { getConfig } from '../../utils/config';
+import { getConfig } from '../config';
 
 export interface SmartScope {
   readonly permissionType: 'patient' | 'user' | 'system';

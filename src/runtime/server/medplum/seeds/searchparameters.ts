@@ -1,8 +1,8 @@
 import { SEARCH_PARAMETER_BUNDLE_FILES, readJson } from '@medplum/definitions';
 import { BundleEntry, SearchParameter } from '@medplum/fhirtypes';
-import { DatabaseMode, getDatabasePool } from '../../utils/database';
+import { DatabaseMode, getDatabasePool } from '../database';
 import { Repository, getSystemRepo } from '../fhir/repo';
-import { globalLogger } from '../../utils/logger';
+import { globalLogger } from '../logger';
 import { r4ProjectId } from '../seed';
 
 /**

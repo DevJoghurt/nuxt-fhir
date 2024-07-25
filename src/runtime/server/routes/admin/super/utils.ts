@@ -3,7 +3,7 @@ import {
     forbidden,
     OperationOutcomeError
   } from '@medplum/core';
-import { getAuthenticatedContext, type AuthenticatedRequestContext} from '#imports'
+import { getAuthenticatedContext, type AuthenticatedRequestContext} from '../../../medplum/context';
 import { Request } from 'express'
 
 export function requireSuperAdmin(): AuthenticatedRequestContext {

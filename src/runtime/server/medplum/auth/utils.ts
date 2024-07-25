@@ -10,8 +10,8 @@ import { ContactPoint, Login, OperationOutcome, Project, ProjectMembership, Refe
 import bcrypt from 'bcryptjs';
 import { Handler, NextFunction, Request, Response } from 'express';
 import fetch from 'node-fetch';
-import { getConfig } from '../../utils/config';
-import { getLogger } from '../../utils/context';
+import { getConfig } from '../config';
+import { getLogger } from '../context';
 import { sendOutcome } from '../fhir/outcomes';
 import { getSystemRepo } from '../fhir/repo';
 import { rewriteAttachments, RewriteMode } from '../fhir/rewrite';

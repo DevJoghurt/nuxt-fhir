@@ -18,8 +18,8 @@ import { Agent, Bundle, BundleEntry, Device, OperationOutcome, Parameters } from
 import { Request } from 'express';
 import { randomUUID } from 'node:crypto';
 import { isIPv4 } from 'node:net';
-import { getAuthenticatedContext } from '../../../../utils/context';
-import { getRedis, getRedisSubscriber } from '../../../../utils/redis';
+import { getAuthenticatedContext } from '../../../context';
+import { getRedis, getRedisSubscriber } from '../../../redis';
 import { Repository } from '../../repo';
 import { AgentPushParameters } from '../agentpush';
 

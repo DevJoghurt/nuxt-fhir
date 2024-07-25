@@ -8,7 +8,7 @@ import {
 } from '@medplum/core';
 import { FhirRequest, FhirResponse } from '@medplum/fhir-router';
 import { ConceptMap } from '@medplum/fhirtypes';
-import { getAuthenticatedContext } from '../../../utils/context';
+import { getAuthenticatedContext } from '../../context';
 import { getOperationDefinition } from './definitions';
 import { buildOutputParameters, parseInputParameters } from './utils/parameters';
 import { findTerminologyResource } from './utils/terminology';

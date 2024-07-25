@@ -1,4 +1,5 @@
-import { createMedplumHandler,getAuthenticatedContext } from '#imports';
+import { createMedplumHandler } from '#imports';
+import { getAuthenticatedContext } from '../../../medplum/context';
 import { Request, Response } from 'express';
 import { asyncWrap } from '../../../medplum/async';
 

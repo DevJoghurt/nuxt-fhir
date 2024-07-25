@@ -9,11 +9,11 @@ import {
 import { Request, Response, Router } from 'express';
 import { body, validationResult } from 'express-validator';
 import { asyncWrap } from '../async';
-import { getConfig } from '../../utils/config';
+import { getConfig } from '../config';
 import { getLogger } from '../../utils/context';
 import { invalidRequest, sendOutcome } from '../fhir/outcomes';
 import { authenticateRequest } from '../oauth/middleware';
-import { getRedis } from '../../utils/redis';
+import { getRedis } from '../redis';
 
 export const fhircastSTU2Router = Router();
 export const fhircastSTU3Router = Router();

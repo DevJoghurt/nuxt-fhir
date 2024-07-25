@@ -2,8 +2,8 @@ import { allOk, badRequest } from '@medplum/core';
 import { FhirRequest, FhirResponse } from '@medplum/fhir-router';
 import { OperationDefinition } from '@medplum/fhirtypes';
 import { AgentConnectionState, AgentInfo } from '../../agent/utils';
-import { getAuthenticatedContext } from '../../../utils/context';
-import { getRedis } from '../../../utils/redis';
+import { getAuthenticatedContext } from '../../context';
+import { getRedis } from '../../redis';
 import { getAgentForRequest } from './utils/agentutils';
 import { buildOutputParameters } from './utils/parameters';
 

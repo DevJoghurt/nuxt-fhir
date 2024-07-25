@@ -1,4 +1,5 @@
-import { createMedplumHandler, getAuthenticatedContext } from '#imports';
+import { createMedplumHandler } from '#imports';
+import { getAuthenticatedContext } from '../../../medplum/context';
 import { Reference, User } from '@medplum/fhirtypes';
 import { Request, Response } from 'express';
 import { authenticator } from 'otplib';

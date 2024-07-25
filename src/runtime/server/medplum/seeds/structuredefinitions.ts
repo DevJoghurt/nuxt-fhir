@@ -1,7 +1,8 @@
 import { readJson } from '@medplum/definitions';
 import { Bundle, BundleEntry, Resource, StructureDefinition } from '@medplum/fhirtypes';
 import { Repository, getSystemRepo } from '../fhir/repo';
-import { globalLogger, DatabaseMode, getDatabasePool } from '#imports';
+import { DatabaseMode, getDatabasePool } from '../database';
+import { globalLogger } from '../logger';
 import { r4ProjectId } from '../seed';
 
 /**

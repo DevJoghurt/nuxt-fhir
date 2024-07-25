@@ -9,7 +9,7 @@ import {
 import { OperationOutcome, Parameters } from '@medplum/fhirtypes';
 import { Request, Response } from 'express';
 import { asyncWrap } from '../../async';
-import { getAuthenticatedContext } from '../../../utils/context';
+import { getAuthenticatedContext } from '../../context';
 import { sendOutcome } from '../outcomes';
 import { getAgentForRequest, getDevice, publishAgentRequest } from './utils/agentutils';
 import { sendAsyncResponse } from './utils/asyncjobexecutor';

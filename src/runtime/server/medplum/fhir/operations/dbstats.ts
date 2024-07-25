@@ -2,7 +2,7 @@ import { allOk } from '@medplum/core';
 import { FhirRequest, FhirResponse } from '@medplum/fhir-router';
 import { OperationDefinition } from '@medplum/fhirtypes';
 import { requireSuperAdmin } from '../../admin/super';
-import { DatabaseMode, getDatabasePool } from '../../../utils/database';
+import { DatabaseMode, getDatabasePool } from '../../database';
 import { buildOutputParameters } from './utils/parameters';
 
 const operation: OperationDefinition = {

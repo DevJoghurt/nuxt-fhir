@@ -41,8 +41,8 @@ import {
   SearchParameter,
 } from '@medplum/fhirtypes';
 import validator from 'validator';
-import { getConfig } from '../../utils/config';
-import { DatabaseMode } from '../../utils/database';
+import { getConfig } from '../config';
+import { DatabaseMode } from '../database';
 import { deriveIdentifierSearchParameter } from './lookups/util';
 import { getLookupTable, Repository } from './repo';
 import { getFullUrl } from './response';

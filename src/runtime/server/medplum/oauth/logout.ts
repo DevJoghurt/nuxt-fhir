@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { asyncWrap } from '../async';
 import { sendOutcome } from '../fhir/outcomes';
 import { revokeLogin } from '../oauth/utils';
-import { getAuthenticatedContext } from '../../utils/context';
+import { getAuthenticatedContext } from '../context';
 
 export const logoutHandler = asyncWrap(async (req: Request, res: Response): Promise<void> => {
   const ctx = getAuthenticatedContext();

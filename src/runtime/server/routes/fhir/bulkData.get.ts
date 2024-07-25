@@ -1,4 +1,5 @@
-import { createMedplumHandler, getAuthenticatedContext } from '#imports';
+import { createMedplumHandler } from '#imports';
+import { getAuthenticatedContext } from '../../medplum/context';
 import { ContentType } from '@medplum/core';
 import type { Request, Response } from 'express'
 import { BulkDataExport } from '@medplum/fhirtypes';

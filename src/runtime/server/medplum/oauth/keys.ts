@@ -15,7 +15,7 @@ import {
 } from 'jose';
 import type { RuntimeConfig } from 'nuxt/schema'
 import { getSystemRepo } from '../fhir/repo';
-import { globalLogger } from '../../utils/logger';
+import { globalLogger } from '../logger';
 
 export interface MedplumBaseClaims extends JWTPayload {
   /**

@@ -1,7 +1,7 @@
 import { allOk, getReferenceString, Operator, sortStringArray } from '@medplum/core';
 import { FhirRequest, FhirResponse } from '@medplum/fhir-router';
 import { Bundle, CompartmentDefinitionResource, Patient, ResourceType } from '@medplum/fhirtypes';
-import { getAuthenticatedContext } from '../../../utils/context';
+import { getAuthenticatedContext } from '../../context';
 import { getPatientCompartments } from '../patient';
 import { Repository } from '../repo';
 import { getOperationDefinition } from './definitions';

@@ -1,6 +1,6 @@
 import { Pool, PoolClient } from 'pg';
 import pg from "pg";
-import { globalLogger } from '#imports';
+import { globalLogger } from './logger';
 import * as migrations from '../migrations/schema';
 import { PostgresDatabase, PostgresServerConfig } from '../../../types';
 

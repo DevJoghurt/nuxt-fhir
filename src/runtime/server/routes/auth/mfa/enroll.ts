@@ -1,4 +1,5 @@
-import { createMedplumHandler, getAuthenticatedContext } from '#imports';
+import { createMedplumHandler } from '#imports';
+import { getAuthenticatedContext } from '../../../medplum/context';
 import { allOk, badRequest } from '@medplum/core';
 import { Reference, User } from '@medplum/fhirtypes';
 import { body } from 'express-validator';

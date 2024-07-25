@@ -8,8 +8,8 @@ import {
   ValueSetComposeInclude,
   ValueSetComposeIncludeFilter,
 } from '@medplum/fhirtypes';
-import { getAuthenticatedContext } from '../../../utils/context';
-import { DatabaseMode } from '../../../utils/database';
+import { getAuthenticatedContext } from '../../context';
+import { DatabaseMode } from '../../database';
 import { Column, SelectQuery } from '../sql';
 import { validateCoding } from './codesystemvalidatecode';
 import { getOperationDefinition } from './definitions';

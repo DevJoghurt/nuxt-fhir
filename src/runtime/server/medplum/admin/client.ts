@@ -9,7 +9,7 @@ import {
 } from '@medplum/fhirtypes';
 import { Request, Response } from 'express';
 import { body } from 'express-validator';
-import { getAuthenticatedContext } from '../../utils/context';
+import { getAuthenticatedContext } from '../context';
 import { Repository, getSystemRepo } from '../fhir/repo';
 import { generateSecret } from '../oauth/keys';
 import { makeValidationMiddleware } from '../util/validator';

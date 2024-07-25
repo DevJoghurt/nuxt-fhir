@@ -2,7 +2,8 @@ import { SearchRequest, Operator, append } from '@medplum/core';
 import { ResourceType, Resource, AsyncJob, ParametersParameter } from '@medplum/fhirtypes';
 import { Queue, QueueBaseOptions, Job, Worker } from 'bullmq';
 import { RuntimeConfig } from 'nuxt/schema';
-import { globalLogger, getRequestContext, tryRunInRequestContext } from '#imports';
+import { getRequestContext, tryRunInRequestContext } from '../context';
+import { globalLogger } from '../logger';
 import { getSystemRepo } from '../fhir/repo';
 import { AsyncJobExecutor } from '../fhir/operations/utils/asyncjobexecutor';
 

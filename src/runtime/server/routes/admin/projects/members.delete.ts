@@ -1,4 +1,5 @@
-import { createMedplumHandler,getAuthenticatedContext } from '#imports';
+import { createMedplumHandler } from '#imports';
+import { getAuthenticatedContext } from '../../../medplum/context';
 import { allOk, badRequest, forbidden, getReferenceString } from '@medplum/core';
 import { Request, Response } from 'express';
 import { ProjectMembership } from '@medplum/fhirtypes';

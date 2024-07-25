@@ -1,6 +1,6 @@
 import { forbidden, OperationOutcomeError } from '@medplum/core';
 import { NextFunction, Request, Response } from 'express';
-import { getAuthenticatedContext } from '../../utils/context';
+import { getAuthenticatedContext } from '../context';
 
 /**
  * Verifies that the current user is a project admin.

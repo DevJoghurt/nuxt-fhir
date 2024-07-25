@@ -1,4 +1,5 @@
-import { createMedplumHandler, getAuthenticatedContext } from '#imports';
+import { createMedplumHandler } from '#imports';
+import { getAuthenticatedContext } from '../../medplum/context';
 import { allOk } from '@medplum/core';
 import { Binary} from '@medplum/fhirtypes';
 import { asyncWrap } from '../../medplum/async';

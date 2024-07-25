@@ -2,7 +2,7 @@ import { ContentType, allOk, badRequest, getReferenceString, normalizeOperationO
 import { FhirRequest, FhirResponse } from '@medplum/fhir-router';
 import { Binary, Bot } from '@medplum/fhirtypes';
 import { Readable } from 'stream';
-import { getAuthenticatedContext } from '../../../utils/context';
+import { getAuthenticatedContext } from '../../context';
 import { getSystemRepo } from '../repo';
 import { getBinaryStorage } from '../storage';
 import { isBotEnabled } from './execute';

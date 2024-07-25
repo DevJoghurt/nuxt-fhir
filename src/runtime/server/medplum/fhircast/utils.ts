@@ -1,5 +1,5 @@
 import { OperationOutcomeError, generateId, serverError } from '@medplum/core';
-import { getRedis } from '../../utils/redis';
+import { getRedis } from '../redis';
 
 export async function getTopicForUser(userId: string): Promise<string> {
   const newTopic = generateId();

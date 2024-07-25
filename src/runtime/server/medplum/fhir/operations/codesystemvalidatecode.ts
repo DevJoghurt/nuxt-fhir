@@ -1,8 +1,8 @@
 import { allOk, badRequest } from '@medplum/core';
 import { FhirRequest, FhirResponse } from '@medplum/fhir-router';
 import { CodeSystem, Coding } from '@medplum/fhirtypes';
-import { getAuthenticatedContext } from '../../../utils/context';
-import { DatabaseMode, getDatabasePool } from '../../../utils/database';
+import { getAuthenticatedContext } from '../../context';
+import { DatabaseMode, getDatabasePool } from '../../database';
 import { SelectQuery } from '../sql';
 import { getOperationDefinition } from './definitions';
 import { buildOutputParameters, parseInputParameters } from './utils/parameters';

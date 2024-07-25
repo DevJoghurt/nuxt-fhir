@@ -4,7 +4,7 @@
  */
 
 import { PoolClient } from 'pg';
-import { globalLogger } from '#imports';
+import { globalLogger } from '../../medplum/logger';
 
 const resourceTypes = [
   'AccessPolicy',

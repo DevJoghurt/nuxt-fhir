@@ -1,6 +1,6 @@
 import MailComposer from 'nodemailer/lib/mail-composer';
 import Mail, { Address } from 'nodemailer/lib/mailer';
-import { getConfig } from '../../utils/config';
+import { getConfig } from '../config';
 
 /**
  * Returns the from address to use.

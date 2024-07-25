@@ -1,6 +1,6 @@
 import cors from 'cors';
 import { Request } from 'express';
-import { getConfig } from '../utils/config';
+import { getConfig } from './config';
 
 const exposedHeaders = ['Content-Location', 'ETag', 'Last-Modified', 'Location'];
 

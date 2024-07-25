@@ -8,8 +8,8 @@ import {
   Reference,
   Resource,
 } from '@medplum/fhirtypes';
-import { buildTracingExtension } from '../../utils/context';
-import { getConfig } from '../../utils/config';
+import { buildTracingExtension } from '../context';
+import { getConfig } from '../config';
 
 /*
  * This file includes a collection of utility functions for working with AuditEvents.

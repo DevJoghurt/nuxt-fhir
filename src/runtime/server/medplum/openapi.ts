@@ -9,7 +9,7 @@ import type {
   SchemaObject,
   TagObject,
 } from 'openapi3-ts/oas31';
-import { getConfig } from '#imports';
+import { getConfig } from './config';
 import { getJsonSchemaDefinitions } from './fhir/jsonschema';
 
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents

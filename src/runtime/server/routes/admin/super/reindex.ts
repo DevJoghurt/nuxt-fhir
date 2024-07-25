@@ -1,4 +1,5 @@
-import { createMedplumHandler, getConfig } from '#imports';
+import { createMedplumHandler } from '#imports';
+import { getConfig } from '../../../medplum/config';
 import {
     accepted,
     validateResourceType,

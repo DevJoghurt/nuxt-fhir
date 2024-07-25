@@ -1,8 +1,8 @@
 import { ContentType, concatUrls, getStatus, isCreated } from '@medplum/core';
 import { OperationOutcome, Resource } from '@medplum/fhirtypes';
 import { Request, Response } from 'express';
-import { getConfig } from '../../utils/config';
-import { getAuthenticatedContext } from '../../utils/context';
+import { getConfig } from '../config';
+import { getAuthenticatedContext } from '../context';
 import { RewriteMode, rewriteAttachments } from './rewrite';
 import { getBinaryStorage } from './storage';
 

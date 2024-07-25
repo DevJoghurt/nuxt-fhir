@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import { Request, Response } from 'express';
 import { body } from 'express-validator';
 import { pwnedPassword } from 'hibp';
-import { getAuthenticatedContext } from '../../utils/context';
+import { getAuthenticatedContext } from '../context';
 import { sendOutcome } from '../fhir/outcomes';
 import { getSystemRepo } from '../fhir/repo';
 import { makeValidationMiddleware } from '../util/validator';

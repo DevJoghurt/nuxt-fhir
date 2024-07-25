@@ -3,8 +3,8 @@ import { AccessPolicy, Binary, Bot, Project, ProjectMembership, Reference } from
 import { Request, Response } from 'express';
 import { body } from 'express-validator';
 import { Readable } from 'stream';
-import { getConfig } from '../../utils/config';
-import { getAuthenticatedContext } from '../../utils/context';
+import { getConfig } from '../config';
+import { getAuthenticatedContext } from '../context';
 import { Repository, getSystemRepo } from '../fhir/repo';
 import { getBinaryStorage } from '../fhir/storage';
 import { makeValidationMiddleware } from '../util/validator';

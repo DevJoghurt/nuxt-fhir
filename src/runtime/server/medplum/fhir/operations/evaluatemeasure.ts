@@ -8,7 +8,7 @@ import {
   MeasureReportGroup,
   MeasureReportGroupPopulation,
 } from '@medplum/fhirtypes';
-import { getAuthenticatedContext } from '../../../utils/context';
+import { getAuthenticatedContext } from '../../context';
 import { Repository } from '../repo';
 import { getOperationDefinition } from './definitions';
 import { parseInputParameters } from './utils/parameters';

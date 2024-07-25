@@ -18,7 +18,7 @@ import {
   ResourceType,
 } from '@medplum/fhirtypes';
 import { Request, Response } from 'express';
-import { getAuthenticatedContext } from '../../../utils/context';
+import { getAuthenticatedContext } from '../../context';
 import { sendOutcome } from '../outcomes';
 
 /**

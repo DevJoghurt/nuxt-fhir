@@ -2,7 +2,7 @@ import { allOk } from '@medplum/core';
 import { AsyncJob } from '@medplum/fhirtypes';
 import { Request, Response, Router } from 'express';
 import { asyncWrap } from '../async';
-import { getAuthenticatedContext } from '../../utils/context';
+import { getAuthenticatedContext } from '../context';
 import { sendResponse } from './response';
 
 // Asychronous Job Status API

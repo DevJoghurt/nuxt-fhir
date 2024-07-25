@@ -3,7 +3,7 @@ import { createSign } from 'crypto';
 import { copyFileSync, createReadStream, createWriteStream, existsSync, mkdirSync } from 'fs';
 import { resolve, sep } from 'path';
 import { Readable, pipeline } from 'stream';
-import { getConfig } from '#imports';
+import { getConfig } from '../config';
 import { getSigningKey } from '../oauth/keys';
 
 /**

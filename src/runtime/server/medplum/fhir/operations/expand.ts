@@ -1,8 +1,8 @@
 import { allOk, badRequest, OperationOutcomeError } from '@medplum/core';
 import { FhirRequest, FhirResponse } from '@medplum/fhir-router';
 import { CodeSystem, Coding, ValueSet, ValueSetComposeInclude, ValueSetExpansionContains } from '@medplum/fhirtypes';
-import { getAuthenticatedContext } from '../../../utils/context';
-import { DatabaseMode, getDatabasePool } from '../../../utils/database';
+import { getAuthenticatedContext } from '../../context';
+import { DatabaseMode, getDatabasePool } from '../../database';
 import { Column, Condition, Conjunction, Disjunction, Expression, SelectQuery, Union } from '../sql';
 import { validateCodings } from './codesystemvalidatecode';
 import { getOperationDefinition } from './definitions';

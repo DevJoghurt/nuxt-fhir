@@ -2,7 +2,8 @@ import { OperationOutcomeError, Operator, badRequest } from '@medplum/core';
 import { DomainConfiguration } from '@medplum/fhirtypes';
 import { Request, Response } from 'express';
 import { body } from 'express-validator';
-import { getConfig, globalLogger } from '#imports';
+import { globalLogger } from '../logger';
+import { getConfig } from '../config';
 import { getSystemRepo } from '../fhir/repo';
 import { makeValidationMiddleware } from '../util/validator';
 

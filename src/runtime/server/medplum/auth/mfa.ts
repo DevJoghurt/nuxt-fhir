@@ -5,7 +5,7 @@ import { body, validationResult } from 'express-validator';
 import { authenticator } from 'otplib';
 import { toDataURL } from 'qrcode';
 import { asyncWrap } from '../async';
-import { getAuthenticatedContext } from '#imports';
+import { getAuthenticatedContext } from '../context';
 import { invalidRequest, sendOutcome } from '../fhir/outcomes';
 import { getSystemRepo } from '../fhir/repo';
 import { authenticateRequest } from '../oauth/middleware';

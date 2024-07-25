@@ -8,7 +8,7 @@ import {
   CapabilityStatementRestSecurity,
   ResourceType,
 } from '@medplum/fhirtypes';
-import { getConfig } from '../../utils/config';
+import { getConfig } from '../config';
 import { RuntimeConfig } from 'nuxt/schema'
 
 /**

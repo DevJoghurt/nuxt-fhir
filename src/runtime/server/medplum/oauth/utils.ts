@@ -29,7 +29,7 @@ import { JWTPayload, jwtVerify, VerifyOptions } from 'jose';
 import fetch from 'node-fetch';
 import { timingSafeEqual } from 'node:crypto';
 import { authenticator } from 'otplib';
-import { getRequestContext } from '../../utils/context';
+import { getRequestContext } from '../context';
 import { getAccessPolicyForLogin } from '../fhir/accesspolicy';
 import { getSystemRepo } from '../fhir/repo';
 import { AuditEventOutcome, logAuthEvent, LoginEvent } from '../util/auditevent';

@@ -1,8 +1,8 @@
 import { accepted, concatUrls, getResourceTypes, protectedResourceTypes } from '@medplum/core';
 import { FhirRequest, FhirResponse } from '@medplum/fhir-router';
 import { Project, ResourceType } from '@medplum/fhirtypes';
-import { getConfig } from '../../../utils/config';
-import { getAuthenticatedContext } from '../../../utils/context';
+import { getConfig } from '../../config';
+import { getAuthenticatedContext } from '../../context';
 import { getPatientResourceTypes } from '../patient';
 import { BulkExporter } from './utils/bulkexporter';
 

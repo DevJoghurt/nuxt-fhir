@@ -3,7 +3,8 @@ import { Bot, Project, Resource, Timing } from '@medplum/fhirtypes';
 import { Job, Queue, QueueBaseOptions, Worker } from 'bullmq';
 import { isValidCron } from 'cron-validator';
 import type { RuntimeConfig } from 'nuxt/schema'
-import { getLogger, globalLogger } from '#imports';
+import { globalLogger } from '../logger';
+import { getLogger } from '../context';
 import { executeBot } from '../fhir/operations/execute';
 import { getSystemRepo } from '../fhir/repo';
 import { findProjectMembership } from './utils';

@@ -23,7 +23,7 @@ import {
   SearchParameter,
 } from '@medplum/fhirtypes';
 import type { PoolClient } from 'pg';
-import { getLogger } from '../../../utils/context';
+import { getLogger } from '../../context';
 import { Column, Condition, Conjunction, Disjunction, Exists, Expression, Negation, SelectQuery } from '../sql';
 import { LookupTable } from './lookuptable';
 import { deriveIdentifierSearchParameter } from './util';

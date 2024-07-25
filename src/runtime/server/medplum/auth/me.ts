@@ -2,7 +2,7 @@ import { getReferenceString, Operator, ProfileResource } from '@medplum/core';
 import { Login, Project, ProjectMembership, Reference, User, UserConfiguration } from '@medplum/fhirtypes';
 import { Request, Response } from 'express';
 import { UAParser } from 'ua-parser-js';
-import { getAuthenticatedContext } from '#imports';
+import { getAuthenticatedContext } from '../context';
 import { getAccessPolicyForLogin } from '../fhir/accesspolicy';
 import { getSystemRepo, Repository } from '../fhir/repo';
 import { rewriteAttachments, RewriteMode } from '../fhir/rewrite';

@@ -3,7 +3,7 @@ import { Practitioner, Project, ProjectMembership, User } from '@medplum/fhirtyp
 import { NIL as nullUuid, v5 } from 'uuid';
 import { bcryptHashPassword } from './auth/utils';
 import { getSystemRepo } from './fhir/repo';
-import { globalLogger } from '../utils/logger';
+import { globalLogger } from './logger';
 import { rebuildR4SearchParameters } from './seeds/searchparameters';
 import { rebuildR4StructureDefinitions } from './seeds/structuredefinitions';
 import { rebuildR4ValueSets } from './seeds/valuesets';

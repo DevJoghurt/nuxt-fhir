@@ -1,26 +1,25 @@
+import { describe, expect, test } from 'vitest'
 import { ContentType } from '@medplum/core';
-import { ServiceRequest } from '@medplum/fhirtypes';
+import type { ServiceRequest } from '@medplum/fhirtypes';
 import { randomUUID } from 'crypto';
 import express from 'express';
+import { createResolver } from '@nuxt/kit'
+import { setup } from '@nuxt/test-utils';
 import request from 'supertest';
-import { initApp, shutdownApp } from '../../app';
-import { loadTestConfig } from '../../config';
-import { initTestAuth } from '../../test.setup';
-import { describe, expect, beforeAll, afterAll, test } from 'vitest';
+import { initTestAuth } from '../../fixtures/test.setup';
 
 const app = express();
-let accessToken: string;
+
+const { resolve } = createResolver(import.meta.url)
+
+await setup({
+  rootDir: resolve('../../fixtures/basic'),
+  server: true
+})
+
+let accessToken = await initTestAuth({ project: { strictMode: false } });
 
 describe('CSV Export', () => {
-  beforeAll(async () => {
-    const config = await loadTestConfig();
-    await initApp(app, config);
-    accessToken = await initTestAuth({ project: { strictMode: false } });
-  });
-
-  afterAll(async () => {
-    await shutdownApp();
-  });
 
   test('Export Patient', async () => {
     // Create a patient that we want to export

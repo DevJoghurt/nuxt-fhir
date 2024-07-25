@@ -3,7 +3,7 @@ import { BulkDataExport } from '@medplum/fhirtypes';
 import { Request, Response, Router } from 'express';
 import { asyncWrap } from '../async';
 import { rewriteAttachments, RewriteMode } from './rewrite';
-import { getAuthenticatedContext } from '../../utils/context';
+import { getAuthenticatedContext } from '../context';
 
 // Bulk Data API
 // https://hl7.org/fhir/uv/bulkdata/STU2/

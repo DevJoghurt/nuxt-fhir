@@ -1,7 +1,7 @@
 import { allOk, badRequest, Operator } from '@medplum/core';
 import { FhirRequest, FhirResponse } from '@medplum/fhir-router';
 import { Bundle, BundleEntry, StructureDefinition } from '@medplum/fhirtypes';
-import { getAuthenticatedContext } from '../../../utils/context';
+import { getAuthenticatedContext } from '../../context';
 import { Repository } from '../repo';
 import { getFullUrl } from '../response';
 

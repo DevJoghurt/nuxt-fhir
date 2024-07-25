@@ -1,5 +1,8 @@
 export default defineNuxtConfig({
-  modules: ['../src/module'],
+  modules: [
+    '../src/module',
+    '@nuxt/test-utils/module'
+  ],
   fhir: {
     postgres: {
       database: {

@@ -2,7 +2,7 @@ import { allOk, notFound } from '@medplum/core';
 import { Login } from '@medplum/fhirtypes';
 import { Request, Response } from 'express';
 import { body } from 'express-validator';
-import { getAuthenticatedContext } from '#imports';
+import { getAuthenticatedContext } from '../context';
 import { sendOutcome } from '../fhir/outcomes';
 import { getSystemRepo } from '../fhir/repo';
 import { revokeLogin } from '../oauth/utils';

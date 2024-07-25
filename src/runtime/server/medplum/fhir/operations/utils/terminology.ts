@@ -1,5 +1,5 @@
 import { OperationOutcomeError, Operator, badRequest, createReference, resolveId } from '@medplum/core';
-import { getAuthenticatedContext } from '../../../../utils/context';
+import { getAuthenticatedContext } from '../../../context';
 import { CodeSystem, CodeSystemConceptProperty, ConceptMap, Reference, ValueSet } from '@medplum/fhirtypes';
 import { SelectQuery, Conjunction, Condition, Column, Union } from '../../sql';
 import { getSystemRepo } from '../../repo';

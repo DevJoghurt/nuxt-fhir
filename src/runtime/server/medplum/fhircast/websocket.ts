@@ -3,8 +3,8 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { IncomingMessage } from 'node:http';
 import ws from 'ws';
 import { DEFAULT_HEARTBEAT_MS, heartbeat } from '../heartbeat';
-import { globalLogger } from '../../utils/logger';
-import { getRedis, getRedisSubscriber } from '../../utils/redis';
+import { globalLogger } from '../logger';
+import { getRedis, getRedisSubscriber } from '../redis';
 
 /**
  * Handles a new WebSocket connection to the FHIRCast hub.

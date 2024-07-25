@@ -2,7 +2,7 @@ import { allOk, ContentType, forbidden } from '@medplum/core';
 import { Request, Response, Router } from 'express';
 import { body, check } from 'express-validator';
 import { asyncWrap } from '../async';
-import { getAuthenticatedContext } from '../../utils/context';
+import { getAuthenticatedContext } from '../context';
 import { sendOutcome } from '../fhir/outcomes';
 import { authenticateRequest } from '../oauth/middleware';
 import { makeValidationMiddleware } from '../util/validator';

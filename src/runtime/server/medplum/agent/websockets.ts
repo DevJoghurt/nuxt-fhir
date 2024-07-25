@@ -16,7 +16,8 @@ import {
   import { getRepoForLogin } from '../fhir/accesspolicy';
   import { executeBot } from '../fhir/operations/execute';
   import { heartbeat } from '../heartbeat';
-  import { globalLogger, getRedis, getRedisSubscriber } from '#imports';
+  import { getRedis, getRedisSubscriber } from '../redis';
+  import { globalLogger } from '../logger';
   import { getLoginForAccessToken } from '../oauth/utils';
   import { AgentConnectionState, AgentInfo } from './utils';
   

@@ -4,7 +4,10 @@ import { randomUUID } from 'crypto';
 import http, { IncomingMessage } from 'http';
 import ws from 'ws';
 import { handleAgentConnection } from './agent/websockets';
-import { getConfig, RequestContext, requestContextStore, globalLogger, getRedis, getRedisSubscriber } from '#imports';
+import { RequestContext, requestContextStore } from './context';
+import { getRedis, getRedisSubscriber } from './redis';
+import { getConfig } from './config';
+import { globalLogger } from './logger';
 import { handleFhircastConnection } from './fhircast/websocket';
 import { handleR4SubscriptionConnection } from './subscriptions/websockets';
 

@@ -4,7 +4,7 @@ import { Request, Response, Router } from 'express';
 import internal from 'stream';
 import zlib from 'zlib';
 import { asyncWrap } from '../async';
-import { getAuthenticatedContext, getLogger } from '../../utils/context';
+import { getAuthenticatedContext, getLogger } from '../context';
 import { authenticateRequest } from '../oauth/middleware';
 import { sendOutcome } from './outcomes';
 import { sendResponse } from './response';
