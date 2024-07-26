@@ -28,7 +28,7 @@ import { sendOutcome } from '../outcomes';
  */
 export async function csvHandler(req: Request, res: Response): Promise<void> {
   const ctx = getAuthenticatedContext();
-  const { resourceType } = req.params as { resourceType: ResourceType };
+  const { resourceType } = req.h3params as { resourceType: ResourceType };
   const query = req.query as Record<string, string[] | string | undefined>;
 
   const fields = query['_fields'] as string;

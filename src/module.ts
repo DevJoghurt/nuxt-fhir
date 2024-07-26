@@ -2,7 +2,8 @@ import {
   defineNuxtModule, 
   createResolver,
   addServerImportsDir,
-  addServerPlugin
+  addServerPlugin,
+  addTypeTemplate
 } from '@nuxt/kit'
 import defu from 'defu'
 import type { ModuleOptions } from './types'
@@ -105,7 +106,7 @@ export default defineNuxtModule<ModuleOptions>({
       maxJsonSize: _options.maxJsonSize || '1mb',
       registerEnabled: _options.registerEnabled || false,
       bcryptHashSalt: _options.bcryptHashSalt || 10,
-      bullmq: _options.bullmq,
+      bullmq: { concurrency: 10, removeOnComplete: { count: 1000 }, removeOnFail: { count: 1000 }, ..._options.bullmq },
       googleClientId: _options.googleClientId || '',
       binaryStorage: _options.binaryStorage || 'file:' + join(_nuxt.options.srcDir, '.tmp-storage')
     })
@@ -123,6 +124,16 @@ export default defineNuxtModule<ModuleOptions>({
     createServerHandler(_options.prefix,{
       cwd: resolve('./runtime/server/routes')
     })
+
+    addTypeTemplate({
+      filename: 'types/fhir-express.d.ts',
+      getContents: () => `import * as express from "express";
+declare module "express" {
+  interface Request {
+      h3params: Record<string, string>
+  }
+}
+`})
 
     // enable websocket
     if(!_nuxt.options.nitro.experimental?.websocket)

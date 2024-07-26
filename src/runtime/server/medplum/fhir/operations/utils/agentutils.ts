@@ -42,7 +42,7 @@ export const MAX_AGENTS_PER_PAGE = 100;
  */
 export async function getAgentForRequest(req: Request | FhirRequest, repo: Repository): Promise<Agent | undefined> {
   // Prefer to search by ID from path parameter
-  const { id } = req.params;
+  const { id } = req.h3params ? req.h3params : req.params;
   if (id) {
     return repo.readResource<Agent>('Agent', id);
   }

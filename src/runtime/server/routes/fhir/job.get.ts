@@ -1,16 +1,22 @@
 import { createMedplumHandler } from '#imports';
 import { getAuthenticatedContext } from '../../medplum/context';
 import { allOk } from '@medplum/core';
-import type { Request, Response } from 'express'
+import { Request, Response } from 'express'
 import { AsyncJob } from '@medplum/fhirtypes';
 import { asyncWrap } from '../../medplum/async';
 import { sendResponse } from '../../medplum/fhir/response';
 
+// Asychronous Job Status API
+// https://hl7.org/fhir/async-bundle.html
+
 const finalJobStatusCodes = ['completed', 'error'];
 
+
 export default createMedplumHandler(asyncWrap(async (req: Request, res: Response) => {
+
     const ctx = getAuthenticatedContext();
-    const { id } = req.params;
+    const { id } = req.h3params;
+
     const asyncJob = await ctx.repo.readResource<AsyncJob>('AsyncJob', id);
 
     if (!finalJobStatusCodes.includes(asyncJob.status as string)) {
@@ -19,6 +25,4 @@ export default createMedplumHandler(asyncWrap(async (req: Request, res: Response
     }
 
     await sendResponse(req, res, allOk, asyncJob);
-  }), {
-    auth: true
-})
+  }))

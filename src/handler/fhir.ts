@@ -64,19 +64,19 @@ export const fhirRoutes: Route = {
     method: 'POST',
     file: 'bot'
   },{
-    path: '/bulkdata',
+    path: '/bulkdata/export/:id',
     method: 'GET',
     file: 'bulkData.get'
   },{
-    path: '/bulkdata',
+    path: '/bulkdata/export/:id',
     method: 'DELETE',
     file: 'bulkData.delete'
   },{
-    path: '/job',
+    path: '/job/:id/status',
     method: 'GET',
     file: 'job.get'
   },{
-    path: '/job',
+    path: '/job/:id/status',
     method: 'DELETE',
     file: 'job.delete'
   },{

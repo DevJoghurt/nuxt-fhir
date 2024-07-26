@@ -22,7 +22,7 @@ export async function createClientHandler(req: Request, res: Response): Promise<
   let project: Project;
   const { project: localsProject, repo } = getAuthenticatedContext();
   if (localsProject.superAdmin) {
-    project = { resourceType: 'Project', id: req.params.projectId };
+    project = { resourceType: 'Project', id: req.h3params.projectId };
   } else {
     project = localsProject;
   }

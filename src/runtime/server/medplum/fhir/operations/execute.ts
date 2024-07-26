@@ -161,7 +161,7 @@ async function executeOperation(req: Request): Promise<OperationOutcome | BotExe
 async function getBotForRequest(req: Request): Promise<Bot | undefined> {
   const ctx = getAuthenticatedContext();
   // Prefer to search by ID from path parameter
-  const { id } = req.params;
+  const { id } = req.h3params;
   if (id) {
     return ctx.repo.readResource<Bot>('Bot', id);
   }

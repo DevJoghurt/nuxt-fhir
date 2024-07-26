@@ -206,7 +206,7 @@ export default createMedplumHandler(asyncWrap(async (req: Request, res: Response
     const request: FhirRequest = {
       method: req.method as HttpMethod,
       pathname: req.originalUrl.replace('/fhir/R4', '').split('?').shift() as string,
-      params: req.params,
+      params: req.h3params,
       query: req.query as Record<string, string>,
       body: req.body,
       headers: req.headers,

@@ -42,7 +42,7 @@ export async function inviteHandler(req: Request, res: Response): Promise<void> 
   const ctx = getAuthenticatedContext();
 
   const inviteRequest = { ...req.body } as ServerInviteRequest;
-  const { projectId } = req.params;
+  const { projectId } = req.h3params;
   if (ctx.project.superAdmin) {
     const systemRepo = getSystemRepo();
     inviteRequest.project = await systemRepo.readResource('Project', projectId as string);

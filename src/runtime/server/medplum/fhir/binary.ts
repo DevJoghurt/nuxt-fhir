@@ -32,7 +32,7 @@ binaryRouter.get(
 export async function handleBinaryWriteRequest(req: Request, res: Response): Promise<void> {
   const ctx = getAuthenticatedContext();
   const create = req.method === 'POST';
-  const { id } = req.params;
+  const { id } = req.h3params;
   const contentType = req.get('Content-Type') as string;
 
   const stream = getContentStream(req);

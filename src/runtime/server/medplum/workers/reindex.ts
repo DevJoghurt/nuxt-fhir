@@ -3,8 +3,8 @@ import { ResourceType, Resource, AsyncJob, ParametersParameter } from '@medplum/
 import { Queue, QueueBaseOptions, Job, Worker } from 'bullmq';
 import { RuntimeConfig } from 'nuxt/schema';
 import { getRequestContext, tryRunInRequestContext } from '../context';
-import { globalLogger } from '../logger';
 import { getSystemRepo } from '../fhir/repo';
+import { globalLogger } from '../logger';
 import { AsyncJobExecutor } from '../fhir/operations/utils/asyncjobexecutor';
 
 /*
@@ -89,13 +89,16 @@ export async function closeReindexWorker(): Promise<void> {
 
 export async function execReindexJob(job: Job<ReindexJobData>): Promise<void> {
   const ctx = getRequestContext();
+  job.updateProgress(0);
   const { resourceTypes, currentTimestamp, endTimestamp, count } = job.data;
   const resourceType = resourceTypes[0];
   const systemRepo = getSystemRepo();
 
   if (!count) {
     ctx.logger.info('Reindex started', { resourceType });
+    job.log(`Reindex started ${resourceType}`);
   }
+  job.updateProgress(10);
 
   const searchRequest: SearchRequest = {
     resourceType,
@@ -133,6 +136,7 @@ export async function execReindexJob(job: Job<ReindexJobData>): Promise<void> {
       const hasMore = !!bundle.link?.find((link) => link.relation === 'next');
       return { hasMore, newCount, nextTimestamp };
     });
+    job.updateProgress(40);
 
     if (hasMore) {
       await addReindexJobData({
@@ -171,12 +175,14 @@ export async function execReindexJob(job: Job<ReindexJobData>): Promise<void> {
           { name: 'elapsedTime', valueQuantity: { value: elapsedTime, code: 'ms' } },
         ],
       });
+      job.updateProgress(80);
 
       const exec = new AsyncJobExecutor(systemRepo, job.data.asyncJob);
       await exec.completeJob(systemRepo, {
         resourceType: 'Parameters',
         parameter: results,
       });
+      job.updateProgress(100);
     }
   } catch (err) {
     const exec = new AsyncJobExecutor(systemRepo, job.data.asyncJob);

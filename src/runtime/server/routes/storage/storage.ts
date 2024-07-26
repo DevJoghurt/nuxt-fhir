@@ -14,7 +14,7 @@ export default createMedplumHandler(asyncWrap(async (req: Request, res: Response
       return;
     }
 
-    const { id } = req.params;
+    const { id } = req.h3params;
     const systemRepo = getSystemRepo();
     const binary = await systemRepo.readResource<Binary>('Binary', id);
 

@@ -76,6 +76,13 @@ export default defineWebSocketHandler({
     },
 });
 
+export async function closeWebSockets(): Promise<void> {
+  if (wsState) {
+    // Wait for all sockets to close
+    await wsState.socketsClosedPromise;
+  }
+}
+
 
 
 /**

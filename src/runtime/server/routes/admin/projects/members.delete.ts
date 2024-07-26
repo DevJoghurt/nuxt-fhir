@@ -8,7 +8,7 @@ import { asyncWrap } from '../../../medplum/async';
 
 export default createMedplumHandler(asyncWrap(async (req: Request, res: Response) => {
   const ctx = getAuthenticatedContext();
-  const { membershipId } = req.params;
+  const { membershipId } = req.h3params;
   const membership = await ctx.repo.readResource<ProjectMembership>('ProjectMembership', membershipId);
   if (membership.project?.reference !== getReferenceString(ctx.project)) {
     sendOutcome(res, forbidden);
@@ -20,7 +20,7 @@ export default createMedplumHandler(asyncWrap(async (req: Request, res: Response
     return;
   }
 
-  await ctx.repo.deleteResource('ProjectMembership', req.params.membershipId);
+  await ctx.repo.deleteResource('ProjectMembership', req.h3params.membershipId);
   sendOutcome(res, allOk);
   }), {
     admin: true

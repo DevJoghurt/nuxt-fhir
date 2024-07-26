@@ -8,7 +8,7 @@ import { sendResponse } from '../../medplum/fhir/response';
 
 export default createMedplumHandler(asyncWrap(async (req: Request, res: Response) => {
     const ctx = getAuthenticatedContext();
-    const { id } = req.params;
+    const { id } = req.h3params;
     const binary = await ctx.repo.readResource<Binary>('Binary', id);
     await sendResponse(req, res, allOk, binary);
   }),{

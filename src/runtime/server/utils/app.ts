@@ -1,4 +1,6 @@
-import { fromNodeMiddleware } from '#imports';
+import { defineEventHandler, createError, getRouterParams } from '#imports';
+import type { IncomingMessage, ServerResponse } from "node:http";
+import type { EventHandlerResponse } from 'h3';
 import { getConfig } from '../medplum/config';
 import { 
   closeRequestContext,	
@@ -10,7 +12,7 @@ import {
 import { initRedis } from '../medplum/redis';
 import { getRateLimiter } from '../medplum/ratelimit';
 import express, { RequestHandler } from 'express';
-import { NextFunction, Request, Response,text, urlencoded, json  } from 'express';
+import { NextFunction, Request, Response,text, urlencoded, json, Router  } from 'express';
 import { sendOutcome } from '../medplum/fhir/outcomes';
 import type { OperationOutcome } from '@medplum/fhirtypes';
 import { badRequest, ContentType } from '@medplum/core';
@@ -30,7 +32,6 @@ import { ValidationChain } from 'express-validator';
  * @param next - The next handler.
  */
 function standardHeaders(_req: Request, res: Response, next: NextFunction): void {
-  
     // Disables all caching
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.set('Pragma', 'no-cache');
@@ -166,6 +167,45 @@ const fihrOOInterceptor = ((req: Request, res: Response, next: NextFunction) => 
   next();
 });
 
+export type NodeHandler = (
+  req: IncomingMessage,
+  res: ServerResponse,
+) => unknown | Promise<unknown>;
+
+export type NodeMiddleware = (
+  req: IncomingMessage,
+  res: ServerResponse,
+  next: (error?: Error) => void,
+) => unknown | Promise<unknown>;
+
+function callNodeHandler(
+  handler: NodeHandler | NodeMiddleware,
+  req: IncomingMessage,
+  res: ServerResponse,
+) {
+  const isMiddleware = handler.length > 2;
+  return new Promise((resolve, reject) => {
+    const next = (err?: Error) => {
+      if (isMiddleware) {
+        res.off("close", next);
+        res.off("error", next);
+      }
+      return err ? reject(createError(err)) : resolve(undefined);
+    };
+    try {
+      const returned = handler(req, res, next);
+      if (isMiddleware && returned === undefined) {
+        res.once("close", next);
+        res.once("error", next);
+      } else {
+        resolve(returned);
+      }
+    } catch (error) {
+      next(error as Error);
+    }
+  });
+}
+
 
 type HandlerOptions = {
   auth?: boolean;
@@ -246,7 +286,21 @@ export function createMedplumHandler(handler: RequestHandler, opts = {} as Handl
       app.use(val)
     }
   }
-	app.use(handler);
-	app.use(errorHandler);
-	return fromNodeMiddleware(app)
+
+  return defineEventHandler((event) => {
+      if (!event.node) {
+        throw new Error(
+          "[h3] Executing Node.js middleware is not supported in this server!",
+        );
+      }
+      const req = event.node.req;
+      req.h3params = getRouterParams(event);
+      app.use(handler);
+      app.use(errorHandler);
+      return callNodeHandler(
+        app,
+        req,
+        event.node.res,
+      ) as EventHandlerResponse;
+  })
 }
