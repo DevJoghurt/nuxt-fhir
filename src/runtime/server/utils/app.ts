@@ -293,7 +293,7 @@ export function createMedplumHandler(handler: RequestHandler, opts = {} as Handl
           "[h3] Executing Node.js middleware is not supported in this server!",
         );
       }
-      const req = event.node.req;
+      const req = event.node.req as Request;
       req.h3params = getRouterParams(event);
       app.use(handler);
       app.use(errorHandler);
