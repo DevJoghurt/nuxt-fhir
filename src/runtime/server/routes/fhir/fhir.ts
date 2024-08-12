@@ -33,6 +33,7 @@ import { codeSystemSubsumesOperation } from '../../medplum/fhir/operations/subsu
 import { valueSetValidateOperation } from '../../medplum/fhir/operations/valuesetvalidatecode';
 import { sendResponse } from '../../medplum/fhir/response';
 import { sendOutcome } from '../../medplum/fhir/outcomes';
+import { snapshotHandler } from '../../medplum/fhir/operations/snapshot';
 
 
 let internalFhirRouter: FhirRouter;
@@ -71,6 +72,10 @@ function initInternalFhirRouter(): FhirRouter {
     // ConceptMap $translate
     router.add('POST', '/ConceptMap/$translate', conceptMapTranslateHandler);
     router.add('POST', '/ConceptMap/:id/$translate', conceptMapTranslateHandler);
+
+    // StructureDefinition $snapshot
+    router.add('POST', '/StructureDefinition/$snapshot', snapshotHandler);
+    router.add('POST', '/StructureDefinition/:id/$snapshot', snapshotHandler);
   
     // ValueSet $expand operation
     router.add('GET', '/ValueSet/$expand', expandOperator);

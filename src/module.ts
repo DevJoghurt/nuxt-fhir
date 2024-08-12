@@ -41,10 +41,10 @@ export default defineNuxtModule<ModuleOptions>({
     bullmq: {
       concurrency: 10, 
       removeOnComplete: { 
-        count: 1 
+        count: 1000 
       }, 
       removeOnFail: { 
-        count: 1 
+        count: 1000 
       }
     }
   },
@@ -106,7 +106,7 @@ export default defineNuxtModule<ModuleOptions>({
       maxJsonSize: _options.maxJsonSize || '1mb',
       registerEnabled: _options.registerEnabled || false,
       bcryptHashSalt: _options.bcryptHashSalt || 10,
-      bullmq: { concurrency: 10, removeOnComplete: { count: 1000 }, removeOnFail: { count: 1000 }, ..._options.bullmq },
+      bullmq: _options.bullmq,
       googleClientId: _options.googleClientId || '',
       binaryStorage: _options.binaryStorage || 'file:' + join(_nuxt.options.srcDir, '.tmp-storage')
     })

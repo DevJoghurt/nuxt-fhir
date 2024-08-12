@@ -7,7 +7,7 @@ export const app = createApp();
 
 const publicDir = './dev/app';
 
-const medplumServer = 'http://localhost:3000/'
+const medplumServer = 'http://localhost:8081/'
 
 app.use(
   defineEventHandler((event) => {

@@ -80,6 +80,10 @@ export const fhirRoutes: Route = {
     method: 'DELETE',
     file: 'job.delete'
   },{
+    path: '/:resourceType/$snapshot',
+    method: 'POST',
+    file: 'snapshot'
+  },{
     path: '/',
     file: 'fhir'
   },{

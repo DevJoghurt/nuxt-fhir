@@ -3,6 +3,9 @@ export default defineNuxtConfig({
     '../src/module',
     '@nuxt/test-utils/module'
   ],
+  devServer: {
+    port: 8081
+  },
   fhir: {
     postgres: {
       database: {
