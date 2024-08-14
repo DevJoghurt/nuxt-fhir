@@ -12,7 +12,7 @@ import {
 import { initRedis } from '../medplum/redis';
 import { getRateLimiter } from '../medplum/ratelimit';
 import express, { RequestHandler } from 'express';
-import { NextFunction, Request, Response,text, urlencoded, json, Router  } from 'express';
+import { NextFunction, Request, Response,text, urlencoded, json  } from 'express';
 import { sendOutcome } from '../medplum/fhir/outcomes';
 import type { OperationOutcome } from '@medplum/fhirtypes';
 import { badRequest, ContentType } from '@medplum/core';

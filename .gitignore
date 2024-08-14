@@ -6,6 +6,7 @@ node_modules
 *.log*
 
 # Temp directories
+tmp
 .tmp-storage
 .temp
 .tmp
